@@ -1,0 +1,26 @@
+name: 'Local Docker image scan'
+description: 'Scan Docker images using Trivy locally'
+inputs: 
+  image-to-scan:
+    description: 'Docker image to scan'
+    required: true
+  whitelist-file:
+    description: 'Path to the whitelist file'
+    required: false
+  username:
+    description: 'Username to authenticate to the Docker registry'
+    required: false
+  password:
+    description: 'Password to authenticate to the Docker registry'
+    required: false
+  github-token:
+    description: 'Pass GITHUB_TOKEN. Task needs to access contents of the repo'
+    default: $(GITHUB_TOKEN)
+
+outputs:
+  scan-report:
+    description: 'File name where the scan results are stored'
+
+runs:
+  using: 'node12'
+  main: 'lib/main.js'

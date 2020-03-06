@@ -1,7 +1,7 @@
 name: 'Local Docker image scan'
 description: 'Scan Docker images using Trivy locally'
 inputs: 
-  image-to-scan:
+  imageName:
     description: 'Docker image to scan'
     required: true
   whitelist-file:

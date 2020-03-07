@@ -28,6 +28,7 @@ export async function getTrivy(): Promise<string> {
     }
 
     const trivyToolPath = findTrivy(cachedToolPath);
+    console.log("Found at " + trivyToolPath);
     fs.chmodSync(trivyToolPath, "777");
 
     return trivyToolPath;

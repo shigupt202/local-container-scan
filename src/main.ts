@@ -19,6 +19,7 @@ function setEnvVariables() {
         trivyEnv["TRIVY_PASSWORD"] = password;
     }
 
+    trivyEnv["TRIVY_EXIT_CODE"] = "1";
 }
 
 async function run(): Promise<void> {
@@ -33,8 +34,10 @@ async function run(): Promise<void> {
             env: trivyEnv,
             ignoreReturnCode: true
         };
+        let args = [];
+        args.push(imageName);
+        const toolRunner = new ToolRunner(trivyPath, args, options);
 
-        const toolRunner = new ToolRunner(trivyPath, [imageName], options);
         const status = await toolRunner.exec();
 
         if (status == 0) {

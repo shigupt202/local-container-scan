@@ -23,7 +23,7 @@ function setEnvVariables() {
 
 async function run(): Promise<void> {
     try {
-        const trivyPath = getTrivy();
+        const trivyPath = await getTrivy();
         console.log("Trivy executable found at path ", trivyPath);
 
         setEnvVariables();

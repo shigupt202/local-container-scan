@@ -16,10 +16,13 @@ export async function getTrivy(): Promise<string> {
     if (!cachedToolPath) {
         let trivyDownloadPath;
         const trivyDownloadUrl = getTrivyDownloadUrl(latestTrivyVersion);
+
+        console.log(util.format("Could not find trivy in cache, downloading from %s", trivyDownloadUrl));
+
         try {
             trivyDownloadPath = await toolCache.downloadTool(trivyDownloadUrl);
         } catch (error) {
-            throw new Error(util.format("Failed to download trivy from ", trivyDownloadUrl));
+            throw new Error(util.format("Failed to download trivy from %s", trivyDownloadUrl));
         }
 
         fs.chmodSync(trivyDownloadPath, "777");
@@ -28,7 +31,6 @@ export async function getTrivy(): Promise<string> {
     }
 
     const trivyToolPath = findTrivy(cachedToolPath);
-    console.log("Found at " + trivyToolPath);
     fs.chmodSync(trivyToolPath, "777");
 
     return trivyToolPath;
@@ -68,7 +70,7 @@ function findTrivy(rootFolder: string): string {
     var filelist: string[] = [];
     walkSync(rootFolder, filelist, trivyToolName);
     if (!filelist) {
-        throw new Error(util.format("Trivy executable not found in path ", rootFolder));
+        throw new Error(util.format("Trivy executable not found in path %s", rootFolder));
     }
     else {
         return filelist[0];

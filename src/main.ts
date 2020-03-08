@@ -8,12 +8,11 @@ const download = require('download');
 let trivyEnv: { [key: string]: string } = {};
 
 async function getWhitelistFileLoc(whitelistFilePath: string): Promise<string> {
-    const whitelistFileUrl = `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/${process.env.GITHUB_REF}/${whitelistFilePath}`;
+    const whitelistFileUrl = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/contents/${whitelistFilePath}`;
     const whitelistFilePathParts = whitelistFilePath.split('/');
     const whitelistFileName = whitelistFilePathParts[whitelistFilePathParts.length - 1];
     const whitelistFileDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/containerScanWhitelist`;
     const githubToken = core.getInput("github-token");
-
     console.log(util.format("Downloading whitelist file from %s", whitelistFileUrl));
 
     return download(whitelistFileUrl, whitelistFileDownloadDir, { headers: { Authorization: `token ${githubToken}` } }).then(() => {
@@ -40,6 +39,7 @@ async function setEnvVariables() {
         const whitelistFilePath = core.getInput("whitelist-file");
         if (whitelistFilePath) {
             const whitelistFileLoc = await getWhitelistFileLoc(whitelistFilePath);
+            console.log(util.format("Whitelist file location: %s", whitelistFileLoc));
             trivyEnv["TRIVY_IGNOREFILE"] = whitelistFileLoc;
         }
     } catch (error) {

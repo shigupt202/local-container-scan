@@ -8,7 +8,7 @@ const download = require('download');
 let trivyEnv: { [key: string]: string } = {};
 
 async function getWhitelistFileLoc(whitelistFilePath: string): Promise<string> {
-    const whitelistFileUrl = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/contents/${whitelistFilePath}`;
+    const whitelistFileUrl = `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/master/${whitelistFilePath}`;
     const whitelistFilePathParts = whitelistFilePath.split('/');
     const whitelistFileName = whitelistFilePathParts[whitelistFilePathParts.length - 1];
     const whitelistFileDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/containerScanWhitelist`;
@@ -33,7 +33,7 @@ async function setEnvVariables() {
         trivyEnv["TRIVY_PASSWORD"] = password;
     }
 
-    trivyEnv["TRIVY_EXIT_CODE"] = "1";
+    trivyEnv["TRIVY_EXIT_CODE"] = "0";
 
     try {
         const whitelistFilePath = core.getInput("whitelist-file");

@@ -1,9 +1,27 @@
 import * as core from '@actions/core'
+import * as util from 'util'
 import { ExecOptions } from '@actions/exec/lib/interfaces';
-import { ToolRunner } from "@actions/exec/lib/toolrunner";
+import { ToolRunner } from '@actions/exec/lib/toolrunner';
 import { getTrivy } from './trivyHelper'
+const download = require('download');
 
 let trivyEnv: { [key: string]: string } = {};
+
+function getWhitelistFileLoc(whitelistFilePath: string): string {
+    try {
+        const whitelistFileUrl = `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/${process.env.GITHUB_REF}/${whitelistFilePath}`;
+        const whitelistFilePathParts = whitelistFilePath.split('/');
+        const whitelistFileName = whitelistFilePathParts[whitelistFilePathParts.length - 1];
+        const whitelistFileDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/containerScanWhitelist`;
+        const githubToken = core.getInput("github-token");
+
+        return download(whitelistFileUrl, whitelistFileDownloadDir, { headers: { Authorization: `token ${githubToken}` } }).then(() => {
+            return `${whitelistFileDownloadDir}/${whitelistFileName}`;
+        });
+    } catch (error) {
+        throw new Error("Could not download whitelist file");
+    }
+}
 
 function setEnvVariables() {
     for (let key in process.env) {
@@ -12,7 +30,6 @@ function setEnvVariables() {
 
     const username = core.getInput("username");
     const password = core.getInput("password");
-
     if (username && password) {
         trivyEnv["TRIVY_AUTH_URL"] = "https://registry.hub.docker.com";
         trivyEnv["TRIVY_USERNAME"] = username;
@@ -20,12 +37,19 @@ function setEnvVariables() {
     }
 
     trivyEnv["TRIVY_EXIT_CODE"] = "1";
+
+    const whitelistFilePath = core.getInput("whitelist-file");
+    if (whitelistFilePath) {
+        const whitelistFileLoc = getWhitelistFileLoc(whitelistFilePath);
+        trivyEnv["TRIVY_IGNOREFILE"] = whitelistFileLoc;
+    }
+
 }
 
 async function run(): Promise<void> {
     try {
         const trivyPath = await getTrivy();
-        console.log("Trivy executable found at path ", trivyPath);
+        console.log(util.format("Trivy executable found at path ", trivyPath));
 
         setEnvVariables();
 

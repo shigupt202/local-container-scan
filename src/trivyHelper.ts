@@ -13,7 +13,7 @@ export async function getTrivy(): Promise<string> {
     const latestTrivyVersion = await getLatestTrivyVersion();
 
     let cachedToolPath = toolCache.find(trivyToolName, latestTrivyVersion);
-    //if (!cachedToolPath) {
+    if (!cachedToolPath) {
         let trivyDownloadPath;
         const trivyDownloadUrl = getTrivyDownloadUrl(latestTrivyVersion);
         const trivyDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools`;
@@ -28,7 +28,7 @@ export async function getTrivy(): Promise<string> {
         fs.chmodSync(trivyDownloadPath, "777");
         const untarredTrivyPath = await toolCache.extractTar(trivyDownloadPath);
         cachedToolPath = await toolCache.cacheDir(untarredTrivyPath, trivyToolName, latestTrivyVersion);
-    //}
+    }
 
     const trivyToolPath = findTrivy(cachedToolPath);
     fs.chmodSync(trivyToolPath, "777");

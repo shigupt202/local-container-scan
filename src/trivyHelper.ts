@@ -10,13 +10,11 @@ const trivyLatestReleaseUrl = "https://api.github.com/repos/aquasecurity/trivy/r
 const trivyToolName = "trivy";
 
 export async function getTrivy(): Promise<string> {
-    const latestTrivyVersion = stableTrivyVersion;// await getLatestTrivyVersion();
-console.log("latest version " + latestTrivyVersion);
+    const latestTrivyVersion = await getLatestTrivyVersion();
     let cachedToolPath = toolCache.find(trivyToolName, latestTrivyVersion);
-    //if (!cachedToolPath) {
+    if (!cachedToolPath) {
         let trivyDownloadPath;
         const trivyDownloadUrl = getTrivyDownloadUrl(latestTrivyVersion);
-        console.log("trivy download url: " + trivyDownloadUrl);
         const trivyDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools`;
         console.log(util.format("Could not find trivy in cache, downloading from %s", trivyDownloadUrl));
 
@@ -29,7 +27,7 @@ console.log("latest version " + latestTrivyVersion);
         fs.chmodSync(trivyDownloadPath, "777");
         const untarredTrivyPath = await toolCache.extractTar(trivyDownloadPath);
         cachedToolPath = await toolCache.cacheDir(untarredTrivyPath, trivyToolName, latestTrivyVersion);
-    //}
+    }
 
     const trivyToolPath = findTrivy(cachedToolPath);
     fs.chmodSync(trivyToolPath, "777");
@@ -38,11 +36,8 @@ console.log("latest version " + latestTrivyVersion);
 }
 
 async function getLatestTrivyVersion(): Promise<string> {
-    console.log("ingetlatesttrivyversion");
     return toolCache.downloadTool(trivyLatestReleaseUrl).then((downloadPath) => {
-        console.log("downloadPath: "+downloadPath);
         const response = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
-        console.log("response: "+response);
         if (!response.tag_name) {
             return stableTrivyVersion;
         }

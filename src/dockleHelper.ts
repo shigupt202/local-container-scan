@@ -15,7 +15,7 @@ export async function getDockle(): Promise<string> {
     if (!cachedToolPath) {
         let dockleDownloadPath;
         const dockleDownloadUrl = getDockleDownloadUrl(latestDockleVersion);
-        const dockleDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools`;
+        const dockleDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools/dockle`;
         console.log(util.format("Could not find dockle in cache, downloading from %s", dockleDownloadUrl));
 
         try {

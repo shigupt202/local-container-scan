@@ -3,7 +3,7 @@ import * as util from 'util'
 import { ExecOptions } from '@actions/exec/lib/interfaces';
 import { ToolRunner } from '@actions/exec/lib/toolrunner';
 import { getTrivy } from './trivyHelper'
-import { getDockle} from './dockleHelper'
+import { getDockle } from './dockleHelper'
 const download = require('download');
 
 let trivyEnv: { [key: string]: string } = {};
@@ -83,25 +83,28 @@ async function run(): Promise<void> {
 
         const trivyStatus = await trivyToolRunner.exec();
 
-        //CIS benchmarks
-        const docklePath = await getDockle();
+        const addCISChecks = core.getInput("add-CIS-checks");
+        if (addCISChecks.toLocaleLowerCase() == "true") {
+            const docklePath = await getDockle();
 
-        await setDockleEnvVariables();
+            await setDockleEnvVariables();
 
-        const dockleOptions: ExecOptions = {
-            env: dockleEnv,
-            ignoreReturnCode: true
-        };
-        let dockleArgs = [];
-        dockleArgs.push(imageName);
-        const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
+            const dockleOptions: ExecOptions = {
+                env: dockleEnv,
+                ignoreReturnCode: true
+            };
 
-        const dockleStatus = await dockleToolRunner.exec();
+            let dockleArgs = [];
+            dockleArgs.push(imageName);
 
-        if (trivyStatus == 0 && dockleStatus == 0) {
+            const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
+
+            await dockleToolRunner.exec();
+        }
+
+        if (trivyStatus == 0) {
             console.log("No vulnerabilities were detected in the container image");
         } else if (trivyStatus == 1) {
-            console.log("Vulnerabilities were detected in the container image");
             throw new Error("Vulnerabilities were detected in the container image");
         } else {
             throw new Error("An error occured while scanning the container image for vulnerabilities");

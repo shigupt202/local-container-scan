@@ -15,7 +15,7 @@ export async function getDockle(): Promise<string> {
     if (!cachedToolPath) {
         let dockleDownloadPath;
         const dockleDownloadUrl = getDockleDownloadUrl(latestDockleVersion);
-        const dockleDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools`;
+        const dockleDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools/dockle`;
         console.log(util.format("Could not find dockle in cache, downloading from %s", dockleDownloadUrl));
 
         try {
@@ -57,7 +57,7 @@ function getDockleDownloadUrl(dockleVersion: string): string {
             return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_Linux-32bit.tar.gz", dockleVersion, dockleVersion);
 
         case "Darwin":
-            return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_Linux-32bit.tar.gz", dockleVersion, dockleVersion);
+            return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_macOS-32bit.tar.gz", dockleVersion, dockleVersion);
 
         default:
             throw new Error(util.format("Container scanning is not supported for %s currently", curOS));

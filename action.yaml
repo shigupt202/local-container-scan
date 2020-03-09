@@ -7,6 +7,10 @@ inputs:
   whitelist-file:
     description: 'Path to the whitelist file'
     required: false
+  whitelist-file-branch:
+    description: 'Branch from which whitelist file is to be downloaded'
+    required: false
+    default: 'master'
   username:
     description: 'Username to authenticate to the Docker registry'
     required: false
@@ -14,8 +18,8 @@ inputs:
     description: 'Password to authenticate to the Docker registry'
     required: false
   github-token:
-    description: 'Pass GITHUB_TOKEN. Task needs to access contents of the repo'
-    default: $(GITHUB_TOKEN)
+    description: 'Github token to download whitelist file'
+    default: ${{ github.token }}
 
 outputs:
   scan-report:

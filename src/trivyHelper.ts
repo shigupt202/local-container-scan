@@ -11,12 +11,10 @@ const trivyToolName = "trivy";
 
 export async function getTrivy(): Promise<string> {
     const latestTrivyVersion = await getLatestTrivyVersion();
-console.log("latest version " + latestTrivyVersion);
     let cachedToolPath = toolCache.find(trivyToolName, latestTrivyVersion);
     //if (!cachedToolPath) {
         let trivyDownloadPath;
         const trivyDownloadUrl = getTrivyDownloadUrl(latestTrivyVersion);
-        console.log("trivy download url: " + trivyDownloadUrl);
         const trivyDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools`;
         console.log(util.format("Could not find trivy in cache, downloading from %s", trivyDownloadUrl));
 
@@ -38,11 +36,8 @@ console.log("latest version " + latestTrivyVersion);
 }
 
 async function getLatestTrivyVersion(): Promise<string> {
-    console.log("ingetlatesttrivyversion");
-    return toolCache.downloadTool(trivyLatestReleaseUrl, `${process.env['GITHUB_WORKSPACE']}/_temp/tools`).then((downloadPath) => {
-        console.log("downloadPath: "+downloadPath);
+    return toolCache.downloadTool(trivyLatestReleaseUrl).then((downloadPath) => {
         const response = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
-        console.log("response: "+response);
         if (!response.tag_name) {
             return stableTrivyVersion;
         }

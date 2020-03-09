@@ -1,7 +1,7 @@
 name: 'Local Docker image scan'
 description: 'Scan Docker images using Trivy locally'
 inputs: 
-  imageName:
+  image-name:
     description: 'Docker image to scan'
     required: true
   whitelist-file:
@@ -20,6 +20,9 @@ inputs:
   github-token:
     description: 'Github token to download whitelist file'
     default: ${{ github.token }}
+  add-CIS-checks:
+    description: 'Add CIS checks to build secure and best pracitce Docker images'
+    default: 'true'
 
 outputs:
   scan-report:

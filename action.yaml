@@ -9,8 +9,8 @@ inputs:
     required: false
   whitelist-file-branch:
     description: 'Branch from which whitelist file is to be downloaded'
-    required: false
     default: 'master'
+    required: false
   username:
     description: 'Username to authenticate to the Docker registry'
     required: false

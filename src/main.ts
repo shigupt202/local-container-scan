@@ -76,8 +76,10 @@ async function run(): Promise<void> {
             env: trivyEnv,
             ignoreReturnCode: true
         };
-        
-        const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
+        let trivyArgs = [];
+        trivyArgs.push(imageName);
+
+        const trivyToolRunner = new ToolRunner(trivyPath, trivyArgs, trivyOptions);
 
         const trivyStatus = await trivyToolRunner.exec();
 
@@ -91,7 +93,10 @@ async function run(): Promise<void> {
             ignoreReturnCode: true
         };
         
-        const dockleToolRunner = new ToolRunner(docklePath, [imageName], dockleOptions);
+        let dockleArgs = [];
+        dockleArgs.push(imageName);
+
+        const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
 
         const dockleStatus = await dockleToolRunner.exec();
 

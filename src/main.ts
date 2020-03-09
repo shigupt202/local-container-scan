@@ -49,6 +49,7 @@ async function setEnvVariables() {
 
 async function run(): Promise<void> {
     try {
+        console.log("Starting scan action");
         const trivyPath = await getTrivy();
         console.log(util.format("Trivy executable found at path ", trivyPath));
 

@@ -33,7 +33,7 @@ async function setEnvVariables() {
         trivyEnv["TRIVY_PASSWORD"] = password;
     }
 
-    trivyEnv["TRIVY_EXIT_CODE"] = "0";
+    trivyEnv["TRIVY_EXIT_CODE"] = "1";
 
     try {
         const whitelistFilePath = core.getInput("whitelist-file");

@@ -84,7 +84,7 @@ async function run(): Promise<void> {
         const trivyStatus = await trivyToolRunner.exec();
 
         const addCISChecks = core.getInput("add-CIS-checks");
-        if (addCISChecks.toLocaleLowerCase() == "true") {
+        if (addCISChecks.toLowerCase() == "true") {
             const docklePath = await getDockle();
 
             await setDockleEnvVariables();

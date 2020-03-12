@@ -1,7 +1,7 @@
 {
-  "name": "local-container-scan",
+  "name": "container-scan",
   "version": "1.0.0",
-  "description": "An action that locally scans images for vulnerabilities",
+  "description": "An action that scans images for vulnerabilities and CIS guidelines",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",

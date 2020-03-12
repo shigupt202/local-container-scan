@@ -1,5 +1,5 @@
-name: 'Local Docker image scan'
-description: 'Scan Docker images using Trivy locally'
+name: 'Container image scan'
+description: 'Scan container images for vulnerabilities and CIS guidelines'
 inputs: 
   image-name:
     description: 'Docker image to scan'

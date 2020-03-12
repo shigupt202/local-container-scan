@@ -30,7 +30,7 @@ export async function getDockle(): Promise<string> {
         cachedToolPath = await toolCache.cacheDir(untarredDocklePath, dockleToolName, latestDockleVersion);
     }
 
-    const dockleToolPath = findDockle(cachedToolPath);
+    const dockleToolPath = cachedToolPath + "/" + dockleToolName;
     fs.chmodSync(dockleToolPath, "777");
 
     return dockleToolPath;
@@ -65,31 +65,19 @@ function getDockleDownloadUrl(dockleVersion: string): string {
     }
 }
 
-function findDockle(rootFolder: string): string {
-    fs.chmodSync(rootFolder, '777');
-    var filelist: string[] = [];
-    walkSync(rootFolder, filelist, dockleToolName);
-    if (!filelist) {
-        throw new Error(util.format("Dockle executable not found in path %s", rootFolder));
-    }
-    else {
-        return filelist[0];
-    }
-}
-
-var walkSync = function (dir: string, filelist: string[], fileToFind: any) {
-    var files = fs.readdirSync(dir);
-    filelist = filelist || [];
-    files.forEach(function (file) {
-        if (fs.statSync(path.join(dir, file)).isDirectory()) {
-            filelist = walkSync(path.join(dir, file), filelist, fileToFind);
-        }
-        else {
-            core.debug(file);
-            if (file == fileToFind) {
-                filelist.push(path.join(dir, file));
-            }
-        }
-    });
-    return filelist;
-};
+// var walkSync = function (dir: string, filelist: string[], fileToFind: any) {
+//     var files = fs.readdirSync(dir);
+//     filelist = filelist || [];
+//     files.forEach(function (file) {
+//         if (fs.statSync(path.join(dir, file)).isDirectory()) {
+//             filelist = walkSync(path.join(dir, file), filelist, fileToFind);
+//         }
+//         else {
+//             core.debug(file);
+//             if (file == fileToFind) {
+//                 filelist.push(path.join(dir, file));
+//             }
+//         }
+//     });
+//     return filelist;
+// };

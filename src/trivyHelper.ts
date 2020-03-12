@@ -29,9 +29,9 @@ export async function getTrivy(): Promise<string> {
         const untarredTrivyPath = await toolCache.extractTar(trivyDownloadPath);
         cachedToolPath = await toolCache.cacheDir(untarredTrivyPath, trivyToolName, latestTrivyVersion);
     }
-    console.log("cachedToolPath: "+cachedToolPath);
-    const trivyToolPath = findTrivy(cachedToolPath);
-    console.log("trivyToolPath: "+trivyToolPath);
+    console.log("cachedToolPath: " + cachedToolPath);
+    const trivyToolPath = cachedToolPath + "/" + trivyToolName;
+    console.log("trivyToolPath: " + trivyToolPath);
     fs.chmodSync(trivyToolPath, "777");
 
     return trivyToolPath;
@@ -66,31 +66,21 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
     }
 }
 
-function findTrivy(rootFolder: string): string {
-    fs.chmodSync(rootFolder, '777');
-    var filelist: string[] = [];
-    walkSync(rootFolder, filelist, trivyToolName);
-    if (!filelist) {
-        throw new Error(util.format("Trivy executable not found in path %s", rootFolder));
-    }
-    else {
-        return filelist[0];
-    }
-}
 
-var walkSync = function (dir: string, filelist: string[], fileToFind: any) {
-    var files = fs.readdirSync(dir);
-    filelist = filelist || [];
-    files.forEach(function (file) {
-        if (fs.statSync(path.join(dir, file)).isDirectory()) {
-            filelist = walkSync(path.join(dir, file), filelist, fileToFind);
-        }
-        else {
-            core.debug(file);
-            if (file == fileToFind) {
-                filelist.push(path.join(dir, file));
-            }
-        }
-    });
-    return filelist;
-};
+
+// var walkSync = function (dir: string, filelist: string[], fileToFind: any) {
+//     var files = fs.readdirSync(dir);
+//     filelist = filelist || [];
+//     files.forEach(function (file) {
+//         if (fs.statSync(path.join(dir, file)).isDirectory()) {
+//             filelist = walkSync(path.join(dir, file), filelist, fileToFind);
+//         }
+//         else {
+//             core.debug(file);
+//             if (file == fileToFind) {
+//                 filelist.push(path.join(dir, file));
+//             }
+//         }
+//     });
+//     return filelist;
+// };

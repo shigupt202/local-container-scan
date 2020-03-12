@@ -25,20 +25,19 @@ export async function getTrivy(): Promise<string> {
             throw new Error(util.format("Failed to download trivy from %s", trivyDownloadUrl));
         }
 
-        fs.chmodSync(trivyDownloadPath, "777");
         const untarredTrivyPath = await toolCache.extractTar(trivyDownloadPath);
         cachedToolPath = await toolCache.cacheDir(untarredTrivyPath, trivyToolName, latestTrivyVersion);
     }
     console.log("cachedToolPath: " + cachedToolPath);
     const trivyToolPath = cachedToolPath + "/" + trivyToolName;
     console.log("trivyToolPath: " + trivyToolPath);
-    fs.chmodSync(trivyToolPath, "777");
 
     return trivyToolPath;
 }
 
 async function getLatestTrivyVersion(): Promise<string> {
     return toolCache.downloadTool(trivyLatestReleaseUrl).then((downloadPath) => {
+        fs.chmodSync(downloadPath, "777");
         const response = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
         if (!response.tag_name) {
             return stableTrivyVersion;

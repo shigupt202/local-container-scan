@@ -28,8 +28,9 @@ export async function getTrivy(): Promise<string> {
         const untarredTrivyPath = await toolCache.extractTar(trivyDownloadPath);
         cachedToolPath = await toolCache.cacheDir(untarredTrivyPath, trivyToolName, latestTrivyVersion);
     }
-
+    console.log("cachedToolPath: "+cachedToolPath);
     const trivyToolPath = findTrivy(cachedToolPath);
+    console.log("trivyToolPath: "+trivyToolPath);
     fs.chmodSync(trivyToolPath, "777");
 
     return trivyToolPath;

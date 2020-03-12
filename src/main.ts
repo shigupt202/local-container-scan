@@ -1,9 +1,9 @@
-import * as core from '@actions/core'
-import * as util from 'util'
+import * as core from '@actions/core';
+import * as util from 'util';
 import { ExecOptions } from '@actions/exec/lib/interfaces';
 import { ToolRunner } from '@actions/exec/lib/toolrunner';
-import { getTrivy } from './trivyHelper'
-import { getDockle } from './dockleHelper'
+import { getTrivy } from './trivyHelper';
+import { getDockle } from './dockleHelper';
 const download = require('download');
 
 async function getWhitelistFileLoc(whitelistFilePath: string, whitelistFileBranch: string): Promise<string> {

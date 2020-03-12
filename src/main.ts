@@ -6,9 +6,6 @@ import { getTrivy } from './trivyHelper'
 import { getDockle } from './dockleHelper'
 const download = require('download');
 
-let trivyEnv: { [key: string]: string } = {};
-let dockleEnv: { [key: string]: string } = {};
-
 async function getWhitelistFileLoc(whitelistFilePath: string, whitelistFileBranch: string): Promise<string> {
     const whitelistFileUrl = `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/${whitelistFileBranch}/${whitelistFilePath}`;
     const whitelistFilePathParts = whitelistFilePath.split('/');
@@ -22,7 +19,8 @@ async function getWhitelistFileLoc(whitelistFilePath: string, whitelistFileBranc
     });
 }
 
-async function setTrivyEnvVariables() {
+async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
+    let trivyEnv: { [key: string]: string } = {};
     for (let key in process.env) {
         trivyEnv[key] = process.env[key] || "";
     }
@@ -47,9 +45,12 @@ async function setTrivyEnvVariables() {
     } catch (error) {
         throw new Error(util.format("Could not download whitelist file. Error: %s", error.message));
     }
+
+    return trivyEnv;
 }
 
-async function setDockleEnvVariables() {
+async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
+    let dockleEnv: { [key: string]: string } = {};
     for (let key in process.env) {
         dockleEnv[key] = process.env[key] || "";
     }
@@ -63,6 +64,8 @@ async function setDockleEnvVariables() {
     }
 
     dockleEnv["DOCKLE_EXIT_CODE"] = "1";
+
+    return dockleEnv;
 }
 
 async function run(): Promise<void> {
@@ -70,7 +73,7 @@ async function run(): Promise<void> {
         const trivyPath = await getTrivy();
         console.log(util.format("Trivy executable found at path ", trivyPath));
 
-        await setTrivyEnvVariables();
+        const trivyEnv = await getTrivyEnvVariables();
 
         const imageName = core.getInput("image-name");
         const trivyOptions: ExecOptions = {
@@ -87,7 +90,7 @@ async function run(): Promise<void> {
         if (addCISChecks.toLowerCase() == "true") {
             const docklePath = await getDockle();
 
-            await setDockleEnvVariables();
+            const dockleEnv = await setDockleEnvVariables();
 
             const dockleOptions: ExecOptions = {
                 env: dockleEnv,

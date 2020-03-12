@@ -1,13 +1,16 @@
 import * as core from '@actions/core'
 import * as util from 'util'
+import * as fs from 'fs'
 import { ExecOptions } from '@actions/exec/lib/interfaces';
 import { ToolRunner } from '@actions/exec/lib/toolrunner';
 import { getTrivy } from './trivyHelper'
 import { getDockle } from './dockleHelper'
 const download = require('download');
+const fetch = require("node-fetch");
 
 let trivyEnv: { [key: string]: string } = {};
 let dockleEnv: { [key: string]: string } = {};
+let containerScanDirectory = '';
 
 async function getWhitelistFileLoc(whitelistFilePath: string, whitelistFileBranch: string): Promise<string> {
     const whitelistFileUrl = `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/${whitelistFileBranch}/${whitelistFilePath}`;
@@ -20,6 +23,18 @@ async function getWhitelistFileLoc(whitelistFilePath: string, whitelistFileBranc
     return download(whitelistFileUrl, whitelistFileDownloadDir, { headers: { Authorization: `token ${githubToken}` } }).then(() => {
         return `${whitelistFileDownloadDir}/${whitelistFileName}`;
     });
+}
+
+function getContainerScanDirectory(): string {
+    if(!containerScanDirectory) {
+        containerScanDirectory = `${process.env['GITHUB_WORKSPACE']}/_temp/containerscan_${Date.now()}`;
+    }
+
+    return containerScanDirectory;
+}
+
+function getTrivyOutputPath(): string {
+    return `${getContainerScanDirectory()}/trivyOutput`;
 }
 
 async function setTrivyEnvVariables() {
@@ -36,6 +51,9 @@ async function setTrivyEnvVariables() {
     }
 
     trivyEnv["TRIVY_EXIT_CODE"] = "1";
+    trivyEnv["TRIVY_FORMAT"] = "json";
+    const trivyOutputPath = getTrivyOutputPath();
+    trivyEnv["TRIVY_OUTPUT"] = trivyOutputPath;
 
     try {
         const whitelistFilePath = core.getInput("whitelist-file");
@@ -63,6 +81,60 @@ async function setDockleEnvVariables() {
     }
 
     dockleEnv["DOCKLE_EXIT_CODE"] = "1";
+}
+
+function isPullRequestWorkflow(): boolean {
+    return true;
+}
+
+function getPullRequestHeadSha(): string {
+    const eventPath = process.env.GITHUB_EVENT_PATH;
+    let headSha = '';
+    if(eventPath) {
+        const eventRaw = fs.readFileSync(eventPath, 'utf-8');
+        const eventJson = JSON.parse(eventRaw);
+        console.log("eventJson: ", eventJson);
+        headSha = eventJson["pull_request"]["head"]["sha"];
+    }
+
+    return headSha;
+}
+
+async function createCheckRun(): Promise<void> {
+    const checkRunUrl = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/check-runs`;
+    const githubToken = core.getInput("github-token");
+    const pullRequestHeadSha = getPullRequestHeadSha();
+    console.log("check run url: ", checkRunUrl);
+    const checkRunPayload = {
+        "head_sha": pullRequestHeadSha,
+        "name": "Container scan",
+        "status": "in_progress",
+        "output": {
+            "title": "Container scan result",
+            "summary": "Scan completed. Found 3 vulnerabilities.",
+            "text": "CVE-2020-1234\nCVE-2020-2345"
+        },
+        "actions": [
+            {
+                "label": "Create PR",
+                "identifier": "vuln_wl_pr",
+                "description": "Whitelist the vulnerabilities"
+            }
+        ]
+    }
+
+    console.log("checkRunPayload: ", checkRunPayload)
+
+    const result = await fetch(checkRunUrl, {
+        method: 'POST',
+        body: JSON.stringify(checkRunPayload),
+        headers: {
+            Authorization: `Bearer ${githubToken}`,
+            Accept: 'application/vnd.github.antiope-preview+json'
+        }
+    })
+
+    console.log('Check run created: ', result.json());
 }
 
 async function run(): Promise<void> {
@@ -100,6 +172,12 @@ async function run(): Promise<void> {
             const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
 
             await dockleToolRunner.exec();
+        }
+
+        if(isPullRequestWorkflow()) {
+            console.log("This is a PR workflow. Trying to create check run")
+            await createCheckRun();
+            console.log("check run created")
         }
 
         if (trivyStatus == 0) {

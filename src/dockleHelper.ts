@@ -24,7 +24,6 @@ export async function getDockle(): Promise<string> {
             throw new Error(util.format("Failed to download dockle from %s", dockleDownloadUrl));
         }
 
-        fs.chmodSync(dockleDownloadPath, "777");
         const untarredDocklePath = await toolCache.extractTar(dockleDownloadPath);
         cachedToolPath = await toolCache.cacheDir(untarredDocklePath, dockleToolName, latestDockleVersion);
     }

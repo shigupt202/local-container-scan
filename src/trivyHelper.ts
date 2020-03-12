@@ -25,7 +25,6 @@ export async function getTrivy(): Promise<string> {
             throw new Error(util.format("Failed to download trivy from %s", trivyDownloadUrl));
         }
 
-        fs.chmodSync(trivyDownloadPath, "777");
         const untarredTrivyPath = await toolCache.extractTar(trivyDownloadPath);
         cachedToolPath = await toolCache.cacheDir(untarredTrivyPath, trivyToolName, latestTrivyVersion);
     }

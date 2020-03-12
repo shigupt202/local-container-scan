@@ -4,6 +4,7 @@ import * as util from 'util';
 import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
+const semver = require('semver');
 
 const stableTrivyVersion = "0.5.0";
 const trivyLatestReleaseUrl = "https://api.github.com/repos/aquasecurity/trivy/releases/latest";
@@ -43,7 +44,7 @@ async function getLatestTrivyVersion(): Promise<string> {
             return stableTrivyVersion;
         }
 
-        return response.tag_name.substring(1);
+        return semver.clean(response.tag_name);
     }, (error) => {
         core.debug(error);
         core.warning(util.format("Failed to read latest trivy verison from %s. Using default stable version %s", trivyLatestReleaseUrl, stableTrivyVersion));

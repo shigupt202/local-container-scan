@@ -11,6 +11,9 @@ inputs:
     description: 'Branch from which whitelist file is to be downloaded'
     default: 'master'
     required: false
+  severity-threshold:
+    description: 'severities of vulnerabilities to be displayed (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)'
+    reuired: false
   username:
     description: 'Username to authenticate to the Docker registry'
     required: false

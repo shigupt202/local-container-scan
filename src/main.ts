@@ -47,6 +47,29 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
         throw new Error(util.format("Could not download whitelist file. Error: %s", error.message));
     }
 
+    const severityThreshold = core.getInput("severity-threshold");
+    if(severityThreshold) {
+        switch(severityThreshold.toUpperCase()) {
+            case 'UNKNOWN':
+                trivyEnv["TRIVY_SEVERITY"] = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL";
+                break;
+            case 'LOW':
+                trivyEnv["TRIVY_SEVERITY"] = "LOW,MEDIUM,HIGH,CRITICAL";
+                break;
+            case 'MEDIUM':
+                trivyEnv["TRIVY_SEVERITY"] = "MEDIUM,HIGH,CRITICAL";
+                break;
+            case 'HIGH':
+                trivyEnv["TRIVY_SEVERITY"] = "HIGH,CRITICAL";
+                break;
+            case 'CRITICAL':
+                trivyEnv["TRIVY_SEVERITY"] = "CRITICAL";
+                break;
+            default:
+                console.log("Invalid severity-threshold");
+        }
+    }
+
     return trivyEnv;
 }
 

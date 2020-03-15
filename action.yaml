@@ -26,6 +26,9 @@ inputs:
   add-CIS-checks:
     description: 'Add CIS checks to build secure and best pracitce Docker images'
     default: 'true'
+  registry-url:
+    description: 'Rgistry URL'
+    default: 'https://registry.hub.docker.com'
 
 outputs:
   scan-report:

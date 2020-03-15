@@ -5,9 +5,9 @@ import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 const semver = require('semver');
 
-const stableDockleVersion = "0.2.4";
-const dockleLatestReleaseUrl = "https://api.github.com/repos/goodwithtech/dockle/releases/latest";
-const dockleToolName = "dockle";
+const stableDockleVersion = '0.2.4';
+const dockleLatestReleaseUrl = 'https://api.github.com/repos/goodwithtech/dockle/releases/latest';
+const dockleToolName = 'dockle';
 
 export async function getDockle(): Promise<string> {
     const latestDockleVersion = await getLatestDockleVersion();
@@ -29,7 +29,7 @@ export async function getDockle(): Promise<string> {
         cachedToolPath = await toolCache.cacheDir(untarredDocklePath, cachedToolName, latestDockleVersion);
     }
 
-    const dockleToolPath = cachedToolPath + "/" + cachedToolName;
+    const dockleToolPath = cachedToolPath + "/" + dockleToolName;
     fs.chmodSync(dockleToolPath, "777");
 
     return dockleToolPath;
@@ -54,10 +54,10 @@ function getDockleDownloadUrl(dockleVersion: string): string {
     const curOS = os.type();
     switch (curOS) {
         case "Linux":
-            return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_Linux-32bit.tar.gz", dockleVersion, dockleVersion);
+            return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_Linux-64bit.tar.gz", dockleVersion, dockleVersion);
 
         case "Darwin":
-            return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_macOS-32bit.tar.gz", dockleVersion, dockleVersion);
+            return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_macOS-64bit.tar.gz", dockleVersion, dockleVersion);
 
         default:
             throw new Error(util.format("Container scanning is not supported for %s currently", curOS));

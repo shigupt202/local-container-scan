@@ -109,9 +109,9 @@ async function run(): Promise<void> {
         let trivyArgs = [];
         trivyArgs.push(imageName);
         const trivyToolRunner = new ToolRunner(trivyPath, trivyArgs, trivyOptions);
-
+        console.log("toolrunner created");
         const trivyStatus = await trivyToolRunner.exec();
-
+        console.log("toolrunner executed");
         const addCISChecks = core.getInput("add-CIS-checks");
         if (addCISChecks.toLowerCase() == "true") {
             const docklePath = await getDockle();

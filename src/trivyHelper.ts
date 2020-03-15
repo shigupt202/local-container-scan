@@ -5,12 +5,14 @@ import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 const semver = require('semver');
 
-const stableTrivyVersion = "0.5.0";
+const stableTrivyVersion = '0.5.0';
 const trivyLatestReleaseUrl = 'https://api.github.com/repos/aquasecurity/trivy/releases/latest';
-const trivyToolName = "trivy";
+const trivyToolName = 'trivy';
 
 export async function getTrivy(): Promise<string> {
-    const latestTrivyVersion = await getLatestTrivyVersion();
+    console.log("in getTrivy");
+    const latestTrivyVersion = stableTrivyVersion;//await getLatestTrivyVersion();
+    console.log("outside getLatestTrivyVersion");
     const cachedToolName = trivyToolName + "_" + os.type();
     let cachedToolPath = toolCache.find(cachedToolName, latestTrivyVersion);
     if (!cachedToolPath) {
@@ -29,7 +31,7 @@ export async function getTrivy(): Promise<string> {
         cachedToolPath = await toolCache.cacheDir(untarredTrivyPath, cachedToolName, latestTrivyVersion);
     }
 
-    const trivyToolPath = cachedToolPath + "/" + cachedToolName;
+    const trivyToolPath = cachedToolPath + "/" + trivyToolName;
     fs.chmodSync(trivyToolPath, "777");
 
     return trivyToolPath;
@@ -59,10 +61,10 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
     const curOS = os.type();
     switch (curOS) {
         case "Linux":
-            return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_Linux-32bit.tar.gz", trivyVersion, trivyVersion);
+            return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_Linux-64bit.tar.gz", trivyVersion, trivyVersion);
 
         case "Darwin":
-            return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_macOS-32bit.tar.gz", trivyVersion, trivyVersion);
+            return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_macOS-64bit.tar.gz", trivyVersion, trivyVersion);
 
         default:
             throw new Error(util.format("Container scanning is not supported for %s currently", curOS));

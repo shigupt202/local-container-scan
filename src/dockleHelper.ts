@@ -11,7 +11,8 @@ const dockleToolName = "dockle";
 
 export async function getDockle(): Promise<string> {
     const latestDockleVersion = await getLatestDockleVersion();
-    let cachedToolPath = toolCache.find(dockleToolName, latestDockleVersion);
+    const cachedToolName = dockleToolName + "_" + os.type();
+    let cachedToolPath = toolCache.find(cachedToolName, latestDockleVersion);
     if (!cachedToolPath) {
         let dockleDownloadPath;
         const dockleDownloadUrl = getDockleDownloadUrl(latestDockleVersion);
@@ -25,10 +26,10 @@ export async function getDockle(): Promise<string> {
         }
 
         const untarredDocklePath = await toolCache.extractTar(dockleDownloadPath);
-        cachedToolPath = await toolCache.cacheDir(untarredDocklePath, dockleToolName, latestDockleVersion);
+        cachedToolPath = await toolCache.cacheDir(untarredDocklePath, cachedToolName, latestDockleVersion);
     }
 
-    const dockleToolPath = cachedToolPath + "/" + dockleToolName;
+    const dockleToolPath = cachedToolPath + "/" + cachedToolName;
     fs.chmodSync(dockleToolPath, "777");
 
     return dockleToolPath;

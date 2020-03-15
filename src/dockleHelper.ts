@@ -13,6 +13,7 @@ export async function getDockle(): Promise<string> {
     const latestDockleVersion = await getLatestDockleVersion();
     const cachedToolName = dockleToolName + "_" + os.type();
     let cachedToolPath = toolCache.find(cachedToolName, latestDockleVersion);
+    console.log("cached tool path: " + cachedToolPath);
     if (!cachedToolPath) {
         let dockleDownloadPath;
         const dockleDownloadUrl = getDockleDownloadUrl(latestDockleVersion);
@@ -27,6 +28,7 @@ export async function getDockle(): Promise<string> {
 
         const untarredDocklePath = await toolCache.extractTar(dockleDownloadPath);
         cachedToolPath = await toolCache.cacheDir(untarredDocklePath, cachedToolName, latestDockleVersion);
+        console.log("cached tool path 2: " + cachedToolPath);
     }
 
     const dockleToolPath = cachedToolPath + "/" + dockleToolName;

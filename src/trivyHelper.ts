@@ -15,6 +15,7 @@ export async function getTrivy(): Promise<string> {
     console.log("outside getLatestTrivyVersion");
     const cachedToolName = trivyToolName + "_" + os.type();
     let cachedToolPath = toolCache.find(cachedToolName, latestTrivyVersion);
+    console.log("cached tool path: " + cachedToolPath);
     if (!cachedToolPath) {
         let trivyDownloadPath;
         const trivyDownloadUrl = getTrivyDownloadUrl(latestTrivyVersion);
@@ -29,6 +30,8 @@ export async function getTrivy(): Promise<string> {
 
         const untarredTrivyPath = await toolCache.extractTar(trivyDownloadPath);
         cachedToolPath = await toolCache.cacheDir(untarredTrivyPath, cachedToolName, latestTrivyVersion);
+        console.log("cached tool path 2: " + cachedToolPath);
+        console.log("find: " + toolCache.find(cachedToolName, latestTrivyVersion));
     }
 
     const trivyToolPath = cachedToolPath + "/" + trivyToolName;

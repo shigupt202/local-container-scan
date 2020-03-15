@@ -6,7 +6,7 @@ import * as core from '@actions/core';
 const semver = require('semver');
 
 const stableTrivyVersion = "0.5.0";
-const trivyLatestReleaseUrl = "https://api.github.com/repos/aquasecurity/trivy/releases/latest";
+const trivyLatestReleaseUrl = 'https://api.github.com/repos/aquasecurity/trivy/releases/latest';
 const trivyToolName = "trivy";
 
 export async function getTrivy(): Promise<string> {
@@ -36,8 +36,10 @@ export async function getTrivy(): Promise<string> {
 }
 
 async function getLatestTrivyVersion(): Promise<string> {
-    console.log("in getLatestTrivyVersion");
-    return toolCache.downloadTool(trivyLatestReleaseUrl).then((downloadPath) => {
+    try {
+        console.log("in getLatestTrivyVersion");
+        let downloadPath = await toolCache.downloadTool(trivyLatestReleaseUrl);
+        console.log("download path" + downloadPath);
         const response = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
         console.log("response: " + response);
         if (!response.tag_name) {
@@ -45,11 +47,12 @@ async function getLatestTrivyVersion(): Promise<string> {
         }
 
         return semver.clean(response.tag_name);
-    }, (error) => {
+    }
+    catch (error) {
         core.debug(error);
         core.warning(util.format("Failed to read latest trivy verison from %s. Using default stable version %s", trivyLatestReleaseUrl, stableTrivyVersion));
         return stableTrivyVersion;
-    });
+    };
 }
 
 function getTrivyDownloadUrl(trivyVersion: string): string {

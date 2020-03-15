@@ -36,8 +36,10 @@ export async function getTrivy(): Promise<string> {
 }
 
 async function getLatestTrivyVersion(): Promise<string> {
+    console.log("in getLatestTrivyVersion");
     return toolCache.downloadTool(trivyLatestReleaseUrl).then((downloadPath) => {
         const response = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
+        console.log("response: "+response);
         if (!response.tag_name) {
             return stableTrivyVersion;
         }

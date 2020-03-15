@@ -95,6 +95,7 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
 
 async function run(): Promise<void> {
     try {
+        console.log("Starting");
         const trivyPath = await getTrivy();
         console.log(util.format("Trivy executable found at path ", trivyPath));
 

@@ -37,7 +37,7 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
         trivyEnv["TRIVY_PASSWORD"] = password;
     }
 
-    trivyEnv["TRIVY_EXIT_CODE"] = "1";
+    trivyEnv["TRIVY_EXIT_CODE"] = "5";
 
     try {
         const whitelistFilePath = core.getInput("whitelist-file");
@@ -90,7 +90,7 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
         dockleEnv["DOCKLE_PASSWORD"] = password;
     }
 
-    dockleEnv["DOCKLE_EXIT_CODE"] = "1";
+    dockleEnv["DOCKLE_EXIT_CODE"] = "5";
 
     return dockleEnv;
 }
@@ -134,7 +134,7 @@ async function run(): Promise<void> {
 
         if (trivyStatus == 0) {
             console.log("No vulnerabilities were detected in the container image");
-        } else if (trivyStatus == 1) {
+        } else if (trivyStatus == 5) {
             throw new Error("Vulnerabilities were detected in the container image");
         } else {
             throw new Error("An error occured while scanning the container image for vulnerabilities");

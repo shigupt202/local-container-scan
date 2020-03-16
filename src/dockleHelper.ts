@@ -51,14 +51,53 @@ async function getLatestDockleVersion(): Promise<string> {
 
 function getDockleDownloadUrl(dockleVersion: string): string {
     const curOS = os.type();
-    switch (curOS) {
-        case "Linux":
-            return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_Linux-32bit.tar.gz", dockleVersion, dockleVersion);
+    const arch = process.arch;
+    switch (arch) {
+        case "x32":
+            switch (curOS) {
+                case "Linux":
+                    return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_Linux-32bit.tar.gz", dockleVersion, dockleVersion);
 
-        case "Darwin":
-            return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_macOS-32bit.tar.gz", dockleVersion, dockleVersion);
+                case "Darwin":
+                    return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_macOS-32bit.tar.gz", dockleVersion, dockleVersion);
 
+                default:
+                    throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
+            }
+        case "x64":
+            switch (curOS) {
+                case "Linux":
+                    return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_Linux-64bit.tar.gz", dockleVersion, dockleVersion);
+
+                case "Darwin":
+                    return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%macOS-64bit.tar.gz", dockleVersion, dockleVersion);
+
+                default:
+                    throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
+            }
+        case "arm":
+            switch (curOS) {
+                case "Linux":
+                    return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_Linux-ARM.tar.gz", dockleVersion, dockleVersion);
+
+                case "Darwin":
+                    throw new Error(util.format("Container scanning is not supported for %s on %s currently", arch, curOS));
+
+                default:
+                    throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
+            }
+        case "arm64":
+            switch (curOS) {
+                case "Linux":
+                    return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_Linux-ARM64.tar.gz", dockleVersion, dockleVersion);
+
+                case "Darwin":
+                    throw new Error(util.format("Container scanning is not supported for %s on %s currently", arch, curOS));
+
+                default:
+                    throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
+            }
         default:
-            throw new Error(util.format("Container scanning is not supported for %s currently", curOS));
+            throw new Error(util.format("Container scanning is not supported for %s currently", arch));
     }
 }

@@ -6,12 +6,12 @@ import * as core from '@actions/core';
 const semver = require('semver');
 
 const stableTrivyVersion = '0.5.0';
-const trivyLatestReleaseUrl = 'https://api.github.com/repos/aquasecurity/trivy/releases/latest';
+const trivyLatestReleaseUrl: string = 'https://api.github.com/repos/aquasecurity/trivy/releases/latest';
 const trivyToolName = 'trivy';
 
 export async function getTrivy(): Promise<string> {
     console.log("in getTrivy");
-    const latestTrivyVersion = stableTrivyVersion;//await getLatestTrivyVersion();
+    const latestTrivyVersion = await getLatestTrivyVersion();
     console.log("outside getLatestTrivyVersion");
     const cachedToolName = trivyToolName + "_" + os.type();
     let cachedToolPath = toolCache.find(cachedToolName, latestTrivyVersion);

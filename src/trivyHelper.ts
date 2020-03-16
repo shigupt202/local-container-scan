@@ -62,6 +62,7 @@ async function getLatestTrivyVersion(): Promise<string> {
 
 function getTrivyDownloadUrl(trivyVersion: string): string {
     const curOS = os.type();
+    console.log("platform: "+process.platform);
     switch (curOS) {
         case "Linux":
             return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_Linux-64bit.tar.gz", trivyVersion, trivyVersion);

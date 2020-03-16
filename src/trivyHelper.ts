@@ -62,15 +62,53 @@ async function getLatestTrivyVersion(): Promise<string> {
 
 function getTrivyDownloadUrl(trivyVersion: string): string {
     const curOS = os.type();
-    console.log("platform: "+process.platform);
-    switch (curOS) {
-        case "Linux":
-            return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_Linux-64bit.tar.gz", trivyVersion, trivyVersion);
+    const arch = process.arch;
+    switch (arch) {
+        case "x32":
+            switch (curOS) {
+                case "Linux":
+                    return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_Linux-32bit.tar.gz", trivyVersion, trivyVersion);
 
-        case "Darwin":
-            return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_macOS-64bit.tar.gz", trivyVersion, trivyVersion);
+                case "Darwin":
+                    return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_macOS-32bit.tar.gz", trivyVersion, trivyVersion);
 
+                default:
+                    throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
+            }
+        case "x64":
+            switch (curOS) {
+                case "Linux":
+                    return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_Linux-64bit.tar.gz", trivyVersion, trivyVersion);
+
+                case "Darwin":
+                    return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_macOS-64bit.tar.gz", trivyVersion, trivyVersion);
+
+                default:
+                    throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
+            }
+        case "arm":
+            switch (curOS) {
+                case "Linux":
+                    return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_Linux-ARM.tar.gz", trivyVersion, trivyVersion);
+
+                case "Darwin":
+                    throw new Error(util.format("Container scanning is not supported for %s on %s currently", arch, curOS));
+
+                default:
+                    throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
+            }
+        case "arm64":
+            switch (curOS) {
+                case "Linux":
+                    return util.format("https://github.com/aquasecurity/trivy/releases/download/v%s/trivy_%s_Linux-ARM64.tar.gz", trivyVersion, trivyVersion);
+
+                case "Darwin":
+                    throw new Error(util.format("Container scanning is not supported for %s on %s currently", arch, curOS));
+
+                default:
+                    throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
+            }
         default:
-            throw new Error(util.format("Container scanning is not supported for %s currently", curOS));
+            throw new Error(util.format("Container scanning is not supported for %s currently", arch));
     }
 }

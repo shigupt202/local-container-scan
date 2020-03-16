@@ -43,7 +43,6 @@ async function getLatestDockleVersion(): Promise<string> {
 
         return semver.clean(response.tag_name);
     }, (error) => {
-        core.debug(error);
         core.warning(util.format("Failed to read latest dockle verison from %s. Using default stable version %s", dockleLatestReleaseUrl, stableDockleVersion));
         return stableDockleVersion;
     });

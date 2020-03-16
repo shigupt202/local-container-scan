@@ -44,7 +44,6 @@ async function getLatestTrivyVersion(): Promise<string> {
 
         return semver.clean(response.tag_name);
     }, (error) => {
-        core.debug(error);
         core.warning(util.format("Failed to read latest trivy verison from %s. Using default stable version %s", trivyLatestReleaseUrl, stableTrivyVersion));
         return stableTrivyVersion;
     });

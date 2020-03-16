@@ -70,7 +70,7 @@ function getDockleDownloadUrl(dockleVersion: string): string {
                     return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_Linux-64bit.tar.gz", dockleVersion, dockleVersion);
 
                 case "Darwin":
-                    return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%macOS-64bit.tar.gz", dockleVersion, dockleVersion);
+                    return util.format("https://github.com/goodwithtech/dockle/releases/download/v%s/dockle_%s_macOS-64bit.tar.gz", dockleVersion, dockleVersion);
 
                 default:
                     throw new Error(util.format("Container scanning is not supported on %s currently", curOS));

@@ -43,7 +43,9 @@ export async function getTrivy(): Promise<string> {
 async function getLatestTrivyVersion(): Promise<string> {
     try {
         console.log("in getLatestTrivyVersion");
-        let downloadPath = await toolCache.downloadTool(trivyLatestReleaseUrl);
+        const downloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools/downloads`;
+        console.log("downloaddir: "+downloadDir);
+        const downloadPath = await toolCache.downloadTool(trivyLatestReleaseUrl, downloadDir);
         console.log("download path" + downloadPath);
         const response = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
         console.log("response: " + response);

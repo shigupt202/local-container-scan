@@ -5,8 +5,8 @@ import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 const semver = require('semver');
 
-const stableTrivyVersion = '0.5.0';
-const trivyLatestReleaseUrl: string = 'https://api.github.com/repos/aquasecurity/trivy/releases/latest';
+const stableTrivyVersion = '0.5.2';
+const trivyLatestReleaseUrl: string = `https://api.github.com/repos/aquasecurity/trivy/releases/latest`;
 const trivyToolName = 'trivy';
 
 export async function getTrivy(): Promise<string> {
@@ -43,9 +43,16 @@ export async function getTrivy(): Promise<string> {
 async function getLatestTrivyVersion(): Promise<string> {
     try {
         console.log("in getLatestTrivyVersion");
-        const downloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools/downloads`;
-        console.log("downloaddir: "+downloadDir);
-        const downloadPath = await toolCache.downloadTool(trivyLatestReleaseUrl, downloadDir);
+        const downloadDir: string = `${process.env['GITHUB_WORKSPACE']}/_temp/tools/downloads`;
+        console.log("downloaddir: " + downloadDir);
+        let downloadPath;
+        try {
+            downloadPath = await toolCache.downloadTool(trivyLatestReleaseUrl, downloadDir);
+        } catch (error) {
+            console.log(error);
+            core.warning(util.format("Failed to read latest trivy verison from %s. Using default stable version %s", trivyLatestReleaseUrl, stableTrivyVersion));
+            return stableTrivyVersion;
+        }
         console.log("download path" + downloadPath);
         const response = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
         console.log("response: " + response);

@@ -33,7 +33,7 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     const password = core.getInput("password");
     const registryURL = core.getInput("registry-url");
     if (username && password) {
-        trivyEnv["TRIVY_AUTH_URL"] = registryURL;
+        //trivyEnv["TRIVY_AUTH_URL"] = registryURL;
         trivyEnv["TRIVY_USERNAME"] = username;
         trivyEnv["TRIVY_PASSWORD"] = password;
     }

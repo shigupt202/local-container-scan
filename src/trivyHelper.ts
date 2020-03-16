@@ -5,7 +5,7 @@ import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 const semver = require('semver');
 
-const stableTrivyVersion = "0.5.0";
+const stableTrivyVersion = "0.5.2";
 const trivyLatestReleaseUrl = "https://api.github.com/repos/aquasecurity/trivy/releases/latest";
 const trivyToolName = "trivy";
 

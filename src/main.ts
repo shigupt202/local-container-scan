@@ -69,7 +69,8 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
                 trivyEnv["TRIVY_SEVERITY"] = "CRITICAL";
                 break;
             default:
-                console.log("Invalid severity-threshold");
+                core.warning("Invalid severity-threshold. Showing all the vulnerabilities.");
+                trivyEnv["TRIVY_SEVERITY"] = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL";
         }
     }
 

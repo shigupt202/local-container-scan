@@ -7,10 +7,6 @@ inputs:
   whitelist-file:
     description: 'Path to the whitelist file'
     required: false
-  whitelist-file-branch:
-    description: 'Branch from which whitelist file is to be downloaded'
-    default: 'master'
-    required: false
   severity-threshold:
     description: 'severities of vulnerabilities to be displayed (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)'
     reuired: false

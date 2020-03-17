@@ -4,6 +4,7 @@ import { ExecOptions } from '@actions/exec/lib/interfaces';
 import { ToolRunner } from '@actions/exec/lib/toolrunner';
 import { getTrivy } from './trivyHelper';
 import { getDockle } from './dockleHelper';
+import * as inputHelper from './inputHelper';
 const download = require('download');
 
 async function getWhitelistFileLoc(whitelistFilePath: string, whitelistFileBranch: string): Promise<string> {
@@ -12,7 +13,7 @@ async function getWhitelistFileLoc(whitelistFilePath: string, whitelistFileBranc
     const whitelistFileName = whitelistFilePathParts[whitelistFilePathParts.length - 1];
     const date = Date.now();
     const whitelistFileDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/containerScanWhitelist_${date}`;
-    const githubToken = core.getInput("github-token");
+    const githubToken = inputHelper.githubToken;
     console.log(util.format("Downloading whitelist file from %s", whitelistFileUrl));
 
     return download(whitelistFileUrl, whitelistFileDownloadDir, { headers: { Authorization: `token ${githubToken}` } }).then(() => {
@@ -25,12 +26,12 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     for (let key in process.env) {
         trivyEnv[key] = process.env[key] || "";
     }
-    
-    const githubToken = core.getInput("github-token");
+
+    const githubToken = inputHelper.githubToken;
     trivyEnv["GITHUB_TOKEN"] = githubToken;
 
-    const username = core.getInput("username");
-    const password = core.getInput("password");
+    const username = inputHelper.username;
+    const password = inputHelper.password;
     if (username && password) {
         trivyEnv["TRIVY_AUTH_URL"] = "https://registry.hub.docker.com";
         trivyEnv["TRIVY_USERNAME"] = username;
@@ -40,8 +41,8 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     trivyEnv["TRIVY_EXIT_CODE"] = "5";
 
     try {
-        const whitelistFilePath = core.getInput("whitelist-file");
-        const whitelistFileBranch = core.getInput("whitelist-file-branch");
+        const whitelistFilePath = inputHelper.whitelistFilePath;
+        const whitelistFileBranch = inputHelper.whitelistFileBranch;
         if (whitelistFilePath) {
             const whitelistFileLoc = await getWhitelistFileLoc(whitelistFilePath, whitelistFileBranch);
             trivyEnv["TRIVY_IGNOREFILE"] = whitelistFileLoc;
@@ -50,9 +51,9 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
         throw new Error(util.format("Could not download whitelist file. Error: %s", error.message));
     }
 
-    const severityThreshold = core.getInput("severity-threshold");
-    if(severityThreshold) {
-        switch(severityThreshold.toUpperCase()) {
+    const severityThreshold = inputHelper.severityThreshold;
+    if (severityThreshold) {
+        switch (severityThreshold.toUpperCase()) {
             case 'UNKNOWN':
                 trivyEnv["TRIVY_SEVERITY"] = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL";
                 break;
@@ -83,8 +84,8 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
         dockleEnv[key] = process.env[key] || "";
     }
 
-    const username = core.getInput("username");
-    const password = core.getInput("password");
+    const username = inputHelper.username;
+    const password = inputHelper.password;
     if (username && password) {
         dockleEnv["DOCKLE_AUTH_URL"] = "https://registry.hub.docker.com";
         dockleEnv["DOCKLE_USERNAME"] = username;
@@ -96,54 +97,50 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
     return dockleEnv;
 }
 
+async function runTrivy(): Promise<number> {
+    const trivyPath = await getTrivy();
+    console.log(util.format("Trivy executable found at path ", trivyPath));
+    const trivyEnv = await getTrivyEnvVariables();
+
+    const imageName = inputHelper.imageName;
+    const trivyOptions: ExecOptions = {
+        env: trivyEnv,
+        ignoreReturnCode: true
+    };
+
+    const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
+    const trivyStatus = await trivyToolRunner.exec();
+    return trivyStatus;
+}
+
+async function runDockle(): Promise<void> {
+    const docklePath = await getDockle();
+    const dockleEnv = await setDockleEnvVariables();
+    const imageName = inputHelper.imageName;
+
+    const dockleOptions: ExecOptions = {
+        env: dockleEnv,
+        ignoreReturnCode: true
+    };
+
+    const dockleToolRunner = new ToolRunner(docklePath, [imageName], dockleOptions);
+    await dockleToolRunner.exec();
+}
+
 async function run(): Promise<void> {
-    try {
-        const trivyPath = await getTrivy();
-        console.log(util.format("Trivy executable found at path ", trivyPath));
+    const trivyStatus = await runTrivy();
+    const addCISChecks = inputHelper.addCISChecks;
+    if (addCISChecks.toLowerCase() === "true") {
+        await runDockle();
+    }
 
-        const trivyEnv = await getTrivyEnvVariables();
-
-        const imageName = core.getInput("image-name");
-        const trivyOptions: ExecOptions = {
-            env: trivyEnv,
-            ignoreReturnCode: true
-        };
-        let trivyArgs = [];
-        trivyArgs.push(imageName);
-        const trivyToolRunner = new ToolRunner(trivyPath, trivyArgs, trivyOptions);
-
-        const trivyStatus = await trivyToolRunner.exec();
-
-        const addCISChecks = core.getInput("add-CIS-checks");
-        if (addCISChecks.toLowerCase() == "true") {
-            const docklePath = await getDockle();
-
-            const dockleEnv = await setDockleEnvVariables();
-
-            const dockleOptions: ExecOptions = {
-                env: dockleEnv,
-                ignoreReturnCode: true
-            };
-
-            let dockleArgs = [];
-            dockleArgs.push(imageName);
-
-            const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
-
-            await dockleToolRunner.exec();
-        }
-
-        if (trivyStatus == 0) {
-            console.log("No vulnerabilities were detected in the container image");
-        } else if (trivyStatus == 5) {
-            throw new Error("Vulnerabilities were detected in the container image");
-        } else {
-            throw new Error("An error occured while scanning the container image for vulnerabilities");
-        }
-
-    } catch (error) {
-        core.setFailed(error.message);
+    if (trivyStatus == 0) {
+        console.log("No vulnerabilities were detected in the container image");
+    } else if (trivyStatus == 5) {
+        throw new Error("Vulnerabilities were detected in the container image");
+    } else {
+        throw new Error("An error occured while scanning the container image for vulnerabilities");
     }
 }
 
-run();
+run().catch(error => core.setFailed(error.message));

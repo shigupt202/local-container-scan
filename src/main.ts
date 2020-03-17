@@ -33,7 +33,6 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     const username = inputHelper.username;
     const password = inputHelper.password;
     if (username && password) {
-        trivyEnv["TRIVY_AUTH_URL"] = "https://registry.hub.docker.com";
         trivyEnv["TRIVY_USERNAME"] = username;
         trivyEnv["TRIVY_PASSWORD"] = password;
     }
@@ -87,7 +86,6 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
     const username = inputHelper.username;
     const password = inputHelper.password;
     if (username && password) {
-        dockleEnv["DOCKLE_AUTH_URL"] = "https://registry.hub.docker.com";
         dockleEnv["DOCKLE_USERNAME"] = username;
         dockleEnv["DOCKLE_PASSWORD"] = password;
     }

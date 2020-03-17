@@ -10,11 +10,9 @@ import * as inputHelper from './inputHelper';
 async function getWhitelistFileLoc(whitelistFilePath: string): Promise<string> {
     const githubWorkspace = process.env['GITHUB_WORKSPACE'];
     const whitelistFileLoc = githubWorkspace + "/" + whitelistFilePath;
-    fs.exists(whitelistFileLoc, (exists) => {
-        if(!exists) {
-            throw new Error("Could not find whitelist file");
-        }
-    })
+    if(!fs.existsSync(whitelistFileLoc)){
+        throw new Error("Could not find whitelist file. (Make sure that you use actions/checkout in your workflow)");
+    }
     console.log("Whitelist file found at " + whitelistFileLoc);
     return whitelistFileLoc;
 }

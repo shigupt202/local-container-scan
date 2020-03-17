@@ -4,20 +4,15 @@ import { ExecOptions } from '@actions/exec/lib/interfaces';
 import { ToolRunner } from '@actions/exec/lib/toolrunner';
 import { getTrivy } from './trivyHelper';
 import { getDockle } from './dockleHelper';
-const download = require('download');
 
-async function getWhitelistFileLoc(whitelistFilePath: string, whitelistFileBranch: string): Promise<string> {
-    const whitelistFileUrl = `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/${whitelistFileBranch}/${whitelistFilePath}`;
-    const whitelistFilePathParts = whitelistFilePath.split('/');
-    const whitelistFileName = whitelistFilePathParts[whitelistFilePathParts.length - 1];
-    const date = Date.now();
-    const whitelistFileDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/containerScanWhitelist_${date}`;
-    const githubToken = core.getInput("github-token");
-    console.log(util.format("Downloading whitelist file from %s", whitelistFileUrl));
-
-    return download(whitelistFileUrl, whitelistFileDownloadDir, { headers: { Authorization: `token ${githubToken}` } }).then(() => {
-        return `${whitelistFileDownloadDir}/${whitelistFileName}`;
-    });
+async function getWhitelistFileLoc(whitelistFilePath: string): Promise<string> {
+    const githubWorkspace = process.env['GITHUB_WORKSPACE'];
+    if (!githubWorkspace) {
+        throw new Error("Use actions/checkout action.");
+    }
+    const whitelistFileLoc = githubWorkspace + "/" + whitelistFilePath;
+    console.log("Whitelist file found at " + whitelistFileLoc);
+    return whitelistFileLoc;
 }
 
 async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
@@ -28,7 +23,7 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
 
     const githubToken = core.getInput("github-token");
     trivyEnv["GITHUB_TOKEN"] = githubToken;
-    
+
     const username = core.getInput("username");
     const password = core.getInput("password");
     const registryURL = core.getInput("registry-url");
@@ -42,9 +37,8 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
 
     try {
         const whitelistFilePath = core.getInput("whitelist-file");
-        const whitelistFileBranch = core.getInput("whitelist-file-branch");
         if (whitelistFilePath) {
-            const whitelistFileLoc = await getWhitelistFileLoc(whitelistFilePath, whitelistFileBranch);
+            const whitelistFileLoc = await getWhitelistFileLoc(whitelistFilePath);
             trivyEnv["TRIVY_IGNOREFILE"] = whitelistFileLoc;
         }
     } catch (error) {
@@ -52,8 +46,8 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     }
 
     const severityThreshold = core.getInput("severity-threshold");
-    if(severityThreshold) {
-        switch(severityThreshold.toUpperCase()) {
+    if (severityThreshold) {
+        switch (severityThreshold.toUpperCase()) {
             case 'UNKNOWN':
                 trivyEnv["TRIVY_SEVERITY"] = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL";
                 break;

@@ -1,16 +1,18 @@
 import * as core from '@actions/core';
+import * as fs from 'fs';
 import * as util from 'util';
 import { ExecOptions } from '@actions/exec/lib/interfaces';
 import { ToolRunner } from '@actions/exec/lib/toolrunner';
 import { getTrivy } from './trivyHelper';
 import { getDockle } from './dockleHelper';
+import { fstat } from 'fs';
 
 async function getWhitelistFileLoc(whitelistFilePath: string): Promise<string> {
     const githubWorkspace = process.env['GITHUB_WORKSPACE'];
-    if (!githubWorkspace) {
-        throw new Error("Use actions/checkout action.");
-    }
     const whitelistFileLoc = githubWorkspace + "/" + whitelistFilePath;
+    if(!fs.existsSync(whitelistFileLoc))    {
+        throw new Error("Could not find whitelist file");
+    }
     console.log("Whitelist file found at " + whitelistFileLoc);
     return whitelistFileLoc;
 }

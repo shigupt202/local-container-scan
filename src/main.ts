@@ -25,16 +25,31 @@ async function getWhitelistFileLoc(whitelistFilePath: string, whitelistFileBranc
     });
 }
 
+function ensureDirExists(dir: string) {
+    if (!fs.existsSync(dir)){
+        fs.mkdirSync(dir);
+    }
+}
+
 function getContainerScanDirectory(): string {
     if(!containerScanDirectory) {
         containerScanDirectory = `${process.env['GITHUB_WORKSPACE']}/_temp/containerscan_${Date.now()}`;
+        ensureDirExists(containerScanDirectory);
     }
 
     return containerScanDirectory;
 }
 
+function ensureFileExists(path: string) {
+    if(!fs.existsSync(path)) {
+        fs.writeFileSync(path, '{}');
+    }
+}
+
 function getTrivyOutputPath(): string {
-    return `${getContainerScanDirectory()}/trivyOutput`;
+    const trivyOutputPath = `${getContainerScanDirectory()}/trivyoutput.json`;
+    ensureFileExists(trivyOutputPath);
+    return trivyOutputPath;
 }
 
 async function setTrivyEnvVariables() {
@@ -63,7 +78,8 @@ async function setTrivyEnvVariables() {
             trivyEnv["TRIVY_IGNOREFILE"] = whitelistFileLoc;
         }
     } catch (error) {
-        throw new Error(util.format("Could not download whitelist file. Error: %s", error.message));
+        // throw new Error(util.format("Could not download whitelist file. Error: %s", error.message));
+        core.warning(util.format("Could not download whitelist file. Error: %s", error.message));
     }
 }
 
@@ -87,12 +103,21 @@ function isPullRequestWorkflow(): boolean {
     return true;
 }
 
+function getFileJson(path: string): any {
+    try {
+        const rawContent = fs.readFileSync(path, 'utf-8');
+        const json = JSON.parse(rawContent);
+        return json;
+    } catch(ex) {
+        throw new Error(`An error occured while parsing the contents of the file: ${path}. Error: ${ex}`);
+    }
+}
+
 function getPullRequestHeadSha(): string {
     const eventPath = process.env.GITHUB_EVENT_PATH;
     let headSha = '';
     if(eventPath) {
-        const eventRaw = fs.readFileSync(eventPath, 'utf-8');
-        const eventJson = JSON.parse(eventRaw);
+        const eventJson = getFileJson(eventPath);
         console.log("eventJson: ", eventJson);
         headSha = eventJson["pull_request"]["head"]["sha"];
     }
@@ -137,6 +162,56 @@ async function createCheckRun(): Promise<void> {
     console.log('Check run created: ', result.json());
 }
 
+function getTrivyOutput(): any {
+    const path = getTrivyOutputPath();
+    return getFileJson(path);
+}
+
+function getVulnerabilities(): any[] {
+    const trivyOutputJson = getTrivyOutput();
+    let vulnerabilities: any[] = [];
+    trivyOutputJson.forEach((ele: any) => {
+        if(ele && ele["Vulnerabilities"]) {
+            ele["Vulnerabilities"].forEach((cve: any) => {
+                vulnerabilities.push({
+                    id: cve["VulnerabilityID"],
+                    package: cve["PkgName"]
+                });
+            });
+        }
+    });
+
+    return vulnerabilities;
+}
+
+async function createCheckRunThroughProxy(imageName: string): Promise<void> {
+    const checkRunProxyUrl = `http://aj-vm-3.westeurope.cloudapp.azure.com:3000/app_proxy/check-run`;
+    const githubToken = core.getInput("github-token");
+    const pullRequestHeadSha = getPullRequestHeadSha();
+    const repository = process.env['GITHUB_REPOSITORY'];
+    const vulnerabilities = getVulnerabilities()
+
+    const checkRunPayload = {
+        head_sha: pullRequestHeadSha,
+        image: imageName,
+        repository: repository,
+        vulnerabilities: vulnerabilities
+    }
+
+    console.log("check run url: ", checkRunProxyUrl);
+    console.log("check run payload: ", checkRunPayload)
+
+    const result = await fetch(checkRunProxyUrl, {
+        method: 'POST',
+        body: JSON.stringify(checkRunPayload),
+        headers: {
+            Authorization: `Bearer ${githubToken}`
+        }
+    })
+
+    console.log('Check run created');
+}
+
 async function run(): Promise<void> {
     try {
         const trivyPath = await getTrivy();
@@ -176,7 +251,8 @@ async function run(): Promise<void> {
 
         if(isPullRequestWorkflow()) {
             console.log("This is a PR workflow. Trying to create check run")
-            await createCheckRun();
+            // await createCheckRun();
+            await createCheckRunThroughProxy(imageName);
             console.log("check run created")
         }
 

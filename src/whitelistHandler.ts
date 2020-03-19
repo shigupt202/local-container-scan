@@ -21,12 +21,14 @@ let dockleWhitelistExists = false;
 // }
 
 export function init() {
-    const whitelistFilePath = `${process.env['GITHUB_WORKSPACE']}/.github/containerscan/whitelist}`;
+    console.log("in init");
+    const whitelistFilePath = `${process.env['GITHUB_WORKSPACE']}/.github/containerscan/whitelist`;
     if (!fs.existsSync(whitelistFilePath)) {
         console.log("Could not find whitelist file.");
         return;
     }
     var whitelist_yaml = jsyaml.safeLoad(fs.readFileSync(whitelistFilePath, 'utf8'));
+    console.log("yaml: " + whitelist_yaml);
     if (whitelist_yaml.general) {
         if (whitelist_yaml.general.common_vulnerabilities) {
             trivyWhitelistExists = true;

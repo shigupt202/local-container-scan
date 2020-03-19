@@ -105,7 +105,8 @@ async function runTrivy(): Promise<number> {
         env: trivyEnv,
         ignoreReturnCode: true, 
         silent: true,
-        outStream: trivyOutStream
+        outStream: trivyOutStream,
+        errStream: trivyOutStream
     };
     console.log("Running container scan");
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);

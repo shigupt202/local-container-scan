@@ -45,10 +45,7 @@ export function init() {
                 trivyWhitelistContent += "\n";
             });
             console.log(trivyWhitelistContent);
-            fs.writeFile(trivyWhitelistPath, trivyWhitelistContent, function (error) {
-                if (error)
-                    throw new Error("Error in creating whitelist file for common vulnerabilities");
-            });
+            fs.writeFileSync(trivyWhitelistPath, trivyWhitelistContent);
         }
         if (whitelist_yaml.general.best_practice_vulnerabilities) {
             dockleWhitelistExists = true;
@@ -59,10 +56,7 @@ export function init() {
                 dockleWhitelistContent += "\n";
             });
             console.log(dockleWhitelistContent);
-            fs.writeFile(trivyWhitelistPath, dockleWhitelistContent, function (error) {
-                if (error)
-                    throw new Error("Error in creating whitelist file for best practice vulnerabilities");
-            });
+            fs.writeFileSync(trivyWhitelistPath, dockleWhitelistContent);
         }
     }
 

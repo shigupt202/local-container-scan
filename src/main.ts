@@ -6,16 +6,7 @@ import { ToolRunner } from '@actions/exec/lib/toolrunner';
 import { getTrivy } from './trivyHelper';
 import { getDockle } from './dockleHelper';
 import * as inputHelper from './inputHelper';
-
-async function getWhitelistFileLoc(whitelistFilePath: string): Promise<string> {
-    const githubWorkspace = process.env['GITHUB_WORKSPACE'];
-    const whitelistFileLoc = githubWorkspace + "/" + whitelistFilePath;
-    if(!fs.existsSync(whitelistFileLoc)){
-        throw new Error("Could not find whitelist file. (Make sure that you use actions/checkout in your workflow)");
-    }
-    console.log("Whitelist file found at " + whitelistFileLoc);
-    return whitelistFileLoc;
-}
+import * as whitelistHandler from './whitelistHandler';
 
 async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     let trivyEnv: { [key: string]: string } = {};
@@ -35,15 +26,8 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
 
     trivyEnv["TRIVY_EXIT_CODE"] = "5";
 
-    try {
-        const whitelistFilePath = inputHelper.whitelistFilePath;
-        if (whitelistFilePath) {
-            const whitelistFileLoc = await getWhitelistFileLoc(whitelistFilePath);
-            trivyEnv["TRIVY_IGNOREFILE"] = whitelistFileLoc;
-        }
-    } catch (error) {
-        throw new Error(util.format("Could not download whitelist file. Error: %s", error.message));
-    }
+    // if(whitelistHandler.trivyWhitelistExists)
+    //     trivyEnv["TRIVY_IGNOREFILE"] = whitelistHandler.getTrivyWhitelist();
 
     const severityThreshold = inputHelper.severityThreshold;
     if (severityThreshold) {
@@ -91,6 +75,7 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
 }
 
 async function runTrivy(): Promise<number> {
+    whitelistHandler.init();
     const trivyPath = await getTrivy();
     console.log(util.format("Trivy executable found at path ", trivyPath));
     const trivyEnv = await getTrivyEnvVariables();

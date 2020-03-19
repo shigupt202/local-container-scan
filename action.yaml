@@ -4,9 +4,6 @@ inputs:
   image-name:
     description: 'Docker image to scan'
     required: true
-  whitelist-file:
-    description: 'Path to the whitelist file'
-    required: false
   severity-threshold:
     description: 'severities of vulnerabilities to be displayed (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)'
     reuired: false

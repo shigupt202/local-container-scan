@@ -98,9 +98,10 @@ async function runTrivy(): Promise<number> {
     const imageName = inputHelper.imageName;
     const trivyOptions: ExecOptions = {
         env: trivyEnv,
-        ignoreReturnCode: true
+        ignoreReturnCode: true, 
+        silent: true
     };
-
+    console.log("Running container scan");
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
     const trivyStatus = await trivyToolRunner.exec();
     return trivyStatus;
@@ -113,9 +114,10 @@ async function runDockle(): Promise<void> {
 
     const dockleOptions: ExecOptions = {
         env: dockleEnv,
-        ignoreReturnCode: true
+        ignoreReturnCode: true, 
+        silent: true
     };
-
+    console.log("Running CIS scan");
     const dockleToolRunner = new ToolRunner(docklePath, [imageName], dockleOptions);
     await dockleToolRunner.exec();
 }

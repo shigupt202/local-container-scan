@@ -98,14 +98,17 @@ async function runTrivy(): Promise<number> {
     //Creating a write stream for trivy output
     let trivyWriteStream = fs.createWriteStream(`${process.env['GITHUB_WORKSPACE']}/trivyOutput`);
     let trivyReadStream = fs.createReadStream(`${process.env['GITHUB_WORKSPACE']}/trivyOutput`);
-    trivyReadStream.on("data", function(data) {
-        let output = data.toString();
+    let output = "";
+    trivyReadStream.on('data', function(data) {
+        output = data.toString();
+        console.log("output: "+output);
+    });
+    trivyReadStream.on('end', function() {
         console.log("output: "+output);
     });
     const trivyOptions: ExecOptions = {
         env: trivyEnv,
         ignoreReturnCode: true, 
-        silent: true,
         outStream: trivyWriteStream,
         errStream: trivyWriteStream
     };

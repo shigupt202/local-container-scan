@@ -94,12 +94,18 @@ async function runTrivy(): Promise<number> {
     const trivyPath = await getTrivy();
     console.log(util.format("Trivy executable found at path ", trivyPath));
     const trivyEnv = await getTrivyEnvVariables();
-
     const imageName = inputHelper.imageName;
+    //Creating a write stream for trivy output
+    let trivyOutStream = fs.createWriteStream(`${process.env['GITHUB_WORKSPACE']}/trivyOutput`);
+    trivyOutStream.on("data", function(data) {
+        let output = data.toString();
+        console.log("output: "+output);
+    });
     const trivyOptions: ExecOptions = {
         env: trivyEnv,
         ignoreReturnCode: true, 
-        silent: true
+        silent: true,
+        outStream: trivyOutStream
     };
     console.log("Running container scan");
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);

@@ -99,9 +99,10 @@ async function runDockle(): Promise<void> {
         ignoreReturnCode: true
     };
     let dockleArgs: any[] = [];
+    dockleArgs.push("-f");
+    dockleArgs.push("json");
     dockleArgs.push(imageName);
-    dockleArgs.push("--exit-code 5");
-    const dockleToolRunner = new ToolRunner(docklePath, [imageName], dockleOptions);
+    const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
     await dockleToolRunner.exec();
 }
 

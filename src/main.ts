@@ -69,11 +69,6 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
         dockleEnv["DOCKLE_PASSWORD"] = password;
     }
 
-    dockleEnv["DOCKLE_EXIT_CODE"] = "5";
-
-    if (whitelistHandler.trivyWhitelistExists)
-        dockleEnv["DOCKLE_IGNOREFILE"] = whitelistHandler.getDockleWhitelist();
-
     return dockleEnv;
 }
 
@@ -103,7 +98,9 @@ async function runDockle(): Promise<void> {
         env: dockleEnv,
         ignoreReturnCode: true
     };
-
+    let dockleArgs: any[] = [];
+    dockleArgs.push(imageName);
+    dockleArgs.push("--exit-code 5");
     const dockleToolRunner = new ToolRunner(docklePath, [imageName], dockleOptions);
     await dockleToolRunner.exec();
 }

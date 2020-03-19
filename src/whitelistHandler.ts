@@ -23,21 +23,21 @@ export function getDockleWhitelist(): string {
 function initializeWhitelistPaths() {
     let curDate = Date.now();
     let trivyWhitelistDir = `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/trivy`;
-    let dockleWhitelistDir = `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/dockle`;
     fs.mkdirSync(trivyWhitelistDir, { recursive: true});
-    fs.mkdirSync(dockleWhitelistDir, { recursive: true});
     trivyWhitelistPath = trivyWhitelistDir + "/whitelist";
-    dockleWhitelistPath = dockleWhitelistDir + "/whitelist";
+
+    //Dockle expects .dockleignore file at the root of the repo 
+    dockleWhitelistPath = `${process.env['GITHUB_WORKSPACE']}/.dockleignore`;
 }
 
 export function init() {
     console.log("in init");
-    initializeWhitelistPaths();
     const whitelistFilePath = `${process.env['GITHUB_WORKSPACE']}/.github/containerscan/whitelist`;
     if (!fs.existsSync(whitelistFilePath)) {
         console.log("Could not find whitelist file.");
         return;
     }
+    initializeWhitelistPaths();
     var whitelist_yaml = jsyaml.safeLoad(fs.readFileSync(whitelistFilePath, 'utf8'));
     if (whitelist_yaml.general) {
         if (whitelist_yaml.general.common_vulnerabilities) {

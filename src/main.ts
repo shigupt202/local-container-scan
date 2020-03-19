@@ -1,23 +1,13 @@
 import * as core from '@actions/core';
-import * as fs from 'fs';
 import * as util from 'util';
 import { ExecOptions } from '@actions/exec/lib/interfaces';
 import { ToolRunner } from '@actions/exec/lib/toolrunner';
 import { GitHubClient } from './githubClient';
 import * as dockleHelper from './dockleHelper';
 import * as inputHelper from './inputHelper';
+import * as whitelistHandler from './whitelistHandler';
 import * as trivyHelper from './trivyHelper';
 import * as utils from './utils';
-
-async function getWhitelistFileLoc(whitelistFilePath: string): Promise<string> {
-    const githubWorkspace = process.env['GITHUB_WORKSPACE'];
-    const whitelistFileLoc = githubWorkspace + "/" + whitelistFilePath;
-    if (!fs.existsSync(whitelistFileLoc)) {
-        throw new Error("Could not find whitelist file. (Make sure that you use actions/checkout in your workflow)");
-    }
-    console.log("Whitelist file found at " + whitelistFileLoc);
-    return whitelistFileLoc;
-}
 
 async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     let trivyEnv: { [key: string]: string } = {};
@@ -39,14 +29,8 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     trivyEnv["TRIVY_FORMAT"] = "json";
     trivyEnv["TRIVY_OUTPUT"] = trivyHelper.getOutputPath();
 
-    try {
-        const whitelistFilePath = inputHelper.whitelistFilePath;
-        if (whitelistFilePath) {
-            const whitelistFileLoc = await getWhitelistFileLoc(whitelistFilePath);
-            trivyEnv["TRIVY_IGNOREFILE"] = whitelistFileLoc;
-        }
-    } catch (error) {
-        throw new Error(util.format("Could not download whitelist file. Error: %s", error.message));
+    if(whitelistHandler.trivyWhitelistExists)   {
+        trivyEnv["TRIVY_IGNOREFILE"] = whitelistHandler.getTrivyWhitelist();
     }
 
     const severityThreshold = inputHelper.severityThreshold;
@@ -88,8 +72,6 @@ async function getDockleEnvVariables(): Promise<{ [key: string]: string }> {
         dockleEnv["DOCKLE_USERNAME"] = username;
         dockleEnv["DOCKLE_PASSWORD"] = password;
     }
-
-    dockleEnv["DOCKLE_EXIT_CODE"] = "5";
 
     return dockleEnv;
 }

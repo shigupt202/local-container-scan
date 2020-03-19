@@ -26,8 +26,8 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
 
     trivyEnv["TRIVY_EXIT_CODE"] = "5";
 
-    // if(whitelistHandler.trivyWhitelistExists)
-    //     trivyEnv["TRIVY_IGNOREFILE"] = whitelistHandler.getTrivyWhitelist();
+    if (whitelistHandler.trivyWhitelistExists)
+        trivyEnv["TRIVY_IGNOREFILE"] = whitelistHandler.getTrivyWhitelist();
 
     const severityThreshold = inputHelper.severityThreshold;
     if (severityThreshold) {
@@ -70,6 +70,9 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
     }
 
     dockleEnv["DOCKLE_EXIT_CODE"] = "5";
+
+    if (whitelistHandler.trivyWhitelistExists)
+        dockleEnv["DOCKLE_IGNOREFILE"] = whitelistHandler.getDockleWhitelist();
 
     return dockleEnv;
 }

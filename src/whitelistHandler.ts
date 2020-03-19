@@ -22,8 +22,8 @@ export function getDockleWhitelist(): string {
 
 function initializeWhitelistPaths() {
     let curDate = Date.now();
-    trivyWhitelistPath = `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/trivy/whitelist`;
-    dockleWhitelistPath = `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/dockle/whitelist`;
+    trivyWhitelistPath = __dirname + `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/trivy/whitelist`;
+    dockleWhitelistPath = __dirname + `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/dockle/whitelist`;
 }
 
 export function init() {

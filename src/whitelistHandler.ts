@@ -22,8 +22,12 @@ export function getDockleWhitelist(): string {
 
 function initializeWhitelistPaths() {
     let curDate = Date.now();
-    trivyWhitelistPath = `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/trivy/whitelist.txt`;
-    dockleWhitelistPath = `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/dockle/whitelist.txt`;
+    let trivyWhitelistDir = `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/trivy`;
+    let dockleWhitelistDir = `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/dockle`;
+    fs.mkdirSync(trivyWhitelistDir, { recursive: true});
+    fs.mkdirSync(dockleWhitelistDir, { recursive: true});
+    trivyWhitelistPath = trivyWhitelistDir + "/whitelist";
+    dockleWhitelistPath = dockleWhitelistDir + "/whitelist";
 }
 
 export function init() {
@@ -56,7 +60,7 @@ export function init() {
                 dockleWhitelistContent += "\n";
             });
             console.log(dockleWhitelistContent);
-            fs.writeFileSync(trivyWhitelistPath, dockleWhitelistContent);
+            fs.writeFileSync(dockleWhitelistPath, dockleWhitelistContent);
         }
     }
 

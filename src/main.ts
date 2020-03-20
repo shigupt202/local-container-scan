@@ -3,9 +3,11 @@ import * as fs from 'fs';
 import * as util from 'util';
 import { ExecOptions } from '@actions/exec/lib/interfaces';
 import { ToolRunner } from '@actions/exec/lib/toolrunner';
-import { getTrivy } from './trivyHelper';
-import { getDockle } from './dockleHelper';
+import * as dockleHelper from './dockleHelper';
+import * as fileHelper from './fileHelper';
+import * as gitHubHelper from './gitHubHelper';
 import * as inputHelper from './inputHelper';
+import * as trivyHelper from './trivyHelper';
 
 async function getWhitelistFileLoc(whitelistFilePath: string): Promise<string> {
     const githubWorkspace = process.env['GITHUB_WORKSPACE'];
@@ -33,7 +35,9 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
         trivyEnv["TRIVY_PASSWORD"] = password;
     }
 
-    trivyEnv["TRIVY_EXIT_CODE"] = "5";
+    trivyEnv["TRIVY_EXIT_CODE"] = trivyHelper.TRIVY_EXIT_CODE.toString();
+    trivyEnv["TRIVY_FORMAT"] = "json";
+    trivyEnv["TRIVY_OUTPUT"] = fileHelper.getTrivyOutputPath();
 
     try {
         const whitelistFilePath = inputHelper.whitelistFilePath;
@@ -72,7 +76,7 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     return trivyEnv;
 }
 
-async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
+async function getDockleEnvVariables(): Promise<{ [key: string]: string }> {
     let dockleEnv: { [key: string]: string } = {};
     for (let key in process.env) {
         dockleEnv[key] = process.env[key] || "";
@@ -91,7 +95,7 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
 }
 
 async function runTrivy(): Promise<number> {
-    const trivyPath = await getTrivy();
+    const trivyPath = await trivyHelper.getTrivy();
     console.log(util.format("Trivy executable found at path ", trivyPath));
     const trivyEnv = await getTrivyEnvVariables();
 
@@ -102,13 +106,13 @@ async function runTrivy(): Promise<number> {
     };
 
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
-    const trivyStatus = await trivyToolRunner.exec();
+    const trivyStatus = await trivyToolRunner.exec();    
     return trivyStatus;
 }
 
-async function runDockle(): Promise<void> {
-    const docklePath = await getDockle();
-    const dockleEnv = await setDockleEnvVariables();
+async function runDockle(): Promise<number> {
+    const docklePath = await dockleHelper.getDockle();
+    const dockleEnv = await getDockleEnvVariables();
     const imageName = inputHelper.imageName;
 
     const dockleOptions: ExecOptions = {
@@ -116,20 +120,31 @@ async function runDockle(): Promise<void> {
         ignoreReturnCode: true
     };
 
-    const dockleToolRunner = new ToolRunner(docklePath, [imageName], dockleOptions);
-    await dockleToolRunner.exec();
+    let dockleArgs = [ imageName, '-f', 'json', '-o', fileHelper.getDockleOutputPath(), '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString() ];
+    const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
+    const dockleStatus =  await dockleToolRunner.exec();
+    return dockleStatus;
 }
 
 async function run(): Promise<void> {
     const trivyStatus = await runTrivy();
     const addCISChecks = inputHelper.addCISChecks;
+    let dockleStatus = -1;
     if (addCISChecks.toLowerCase() === "true") {
-        await runDockle();
+        dockleStatus = await runDockle();
+    }
+
+    try {
+        console.log("Creating check run...");
+        await gitHubHelper.createCheckRunWithScanResult(trivyStatus, dockleStatus);
+        console.log("Check run created successfully...");
+    } catch(error) {
+        core.warning(`An error occured while creating the check run for container scan. Error: ${error}`);
     }
 
     if (trivyStatus == 0) {
         console.log("No vulnerabilities were detected in the container image");
-    } else if (trivyStatus == 5) {
+    } else if (trivyStatus == trivyHelper.TRIVY_EXIT_CODE) {
         throw new Error("Vulnerabilities were detected in the container image");
     } else {
         throw new Error("An error occured while scanning the container image for vulnerabilities");

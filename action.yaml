@@ -6,16 +6,13 @@ inputs:
     required: true
   severity-threshold:
     description: 'severities of vulnerabilities to be displayed (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)'
-    reuired: false
+    required: false
   username:
     description: 'Username to authenticate to the Docker registry'
     required: false
   password:
     description: 'Password to authenticate to the Docker registry'
     required: false
-  github-token:
-    description: 'Github token to download whitelist file'
-    default: ${{ github.token }}
   add-CIS-checks:
     description: 'Add CIS checks to build secure and best pracitce Docker images'
     default: 'true'

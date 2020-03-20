@@ -13,9 +13,6 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
         trivyEnv[key] = process.env[key] || "";
     }
 
-    const githubToken = inputHelper.githubToken;
-    trivyEnv["GITHUB_TOKEN"] = githubToken;
-
     const username = inputHelper.username;
     const password = inputHelper.password;
     if (username && password) {

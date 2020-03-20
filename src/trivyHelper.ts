@@ -3,8 +3,10 @@ import * as util from 'util';
 import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
+import * as fileHelper from './fileHelper';
 const semver = require('semver');
 
+export const TRIVY_EXIT_CODE = 5;
 const stableTrivyVersion = "0.5.2";
 const trivyLatestReleaseUrl = "https://api.github.com/repos/aquasecurity/trivy/releases/latest";
 const trivyToolName = "trivy";
@@ -33,6 +35,56 @@ export async function getTrivy(): Promise<string> {
     fs.chmodSync(trivyToolPath, "777");
 
     return trivyToolPath;
+}
+
+export function getVulnerabilityIds(): any[] {
+    const vulnerabilities = getVulnerabilities();
+    const vulnerabilityIds = vulnerabilities.map(v => v['VulnerabilityID']);
+    return vulnerabilityIds;
+}
+
+export function getOutputSummary(trivyStatus: number): string {
+    let summary = '';
+    switch(trivyStatus) {
+        case 0:
+            summary = 'No vulnerabilities were detected in the container image'
+            break;
+        case TRIVY_EXIT_CODE:
+            const vulnerabilities = getVulnerabilities();
+            const total = vulnerabilities.length;
+            const unknownCount = vulnerabilities.map(v => v['Severity'].toUpperCase() === 'UNKNOWN').length;
+            const lowCount = vulnerabilities.map(v => v['Severity'].toUpperCase() === 'LOW').length;
+            const mediumCount = vulnerabilities.map(v => v['Severity'].toUpperCase() === 'MEDIUM').length;
+            const highCount = vulnerabilities.map(v => v['Severity'].toUpperCase() === 'HIGH').length;
+            const criticalCount = vulnerabilities.map(v => v['Severity'].toUpperCase() === 'CRITICAL').length;
+        
+            summary = `Found ${total} vulnerabilities-\nUNKNOWN: ${unknownCount}\nLOW: ${lowCount}\nMEDIUM: ${mediumCount}\nHIGH: ${highCount}\nCRITICAL: ${criticalCount}`;
+            break;
+        default:
+            summary = 'An error occured while scanning the container image for vulnerabilities';
+            break;
+    }
+    
+    return summary;
+}
+
+function getTrivyOutput(): any {
+    const path = fileHelper.getTrivyOutputPath();
+    return fileHelper.getFileJson(path);
+}
+
+function getVulnerabilities(): any[] {
+    const trivyOutputJson = getTrivyOutput();
+    let vulnerabilities: any[] = [];
+    trivyOutputJson.forEach((ele: any) => {
+        if(ele && ele["Vulnerabilities"]) {
+            ele["Vulnerabilities"].forEach((cve: any) => {
+                vulnerabilities.push(cve);
+            });
+        }
+    });
+
+    return vulnerabilities;
 }
 
 async function getLatestTrivyVersion(): Promise<string> {

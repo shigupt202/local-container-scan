@@ -3,8 +3,11 @@ import * as util from 'util';
 import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
+import * as fileHelper from './fileHelper';
+import * as inputHelper from './inputHelper';
 const semver = require('semver');
 
+export const DOCKLE_EXIT_CODE = 5;
 const stableDockleVersion = "0.2.4";
 const dockleLatestReleaseUrl = "https://api.github.com/repos/goodwithtech/dockle/releases/latest";
 const dockleToolName = "dockle";
@@ -32,6 +35,58 @@ export async function getDockle(): Promise<string> {
     fs.chmodSync(dockleToolPath, "777");
 
     return dockleToolPath;
+}
+
+export function isCisChecksEnabled(): boolean {
+    return inputHelper.addCISChecks.toLowerCase() === "true";
+}
+
+export function getSummary(dockleStatus: number): string {
+    let summary = '';
+    switch(dockleStatus) {
+        case 0:
+            summary = 'No CIS benchmark violations were detected in the container image.'
+            break;
+        case DOCKLE_EXIT_CODE:
+            summary = getCisSummary();
+            break;
+        default:
+            summary = 'An error occured while scanning the container image for CIS benchmark violations.';
+            break;
+    }
+    
+    return `- ${summary}`;
+}
+
+export function getText(dockleStatus: number): string {
+    const cisIds = getCisIds(dockleStatus);
+    return `**Best Practices** -\n${cisIds.join('\n')}`;
+}
+
+function getCisIds(dockleStatus: number): string[] {
+    let cisIds: string[] = [];
+    if(dockleStatus == DOCKLE_EXIT_CODE) {
+        const dockleOutputJson = getDockleOutput();
+        cisIds = dockleOutputJson['details'].map(dd => dd['code']);
+    }
+
+    return cisIds;
+}
+
+function getDockleOutput(): any {
+    const path = fileHelper.getDockleOutputPath();
+    return fileHelper.getFileJson(path);
+}
+
+function getCisSummary(): any {
+    const dockleOutputJson = getDockleOutput();
+    let cisSummary = '';
+    const dockleSummary = dockleOutputJson['summary'];
+    if (dockleSummary) {
+        cisSummary = `CIS benchmark test summary -\n"fatal": ${dockleSummary["fatal"]}\n"warn": ${dockleSummary["warn"]}\n"info": ${dockleSummary["info"]}\n"pass": ${dockleSummary["pass"]}`;
+    }
+    
+    return cisSummary;
 }
 
 async function getLatestDockleVersion(): Promise<string> {

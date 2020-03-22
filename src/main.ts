@@ -70,7 +70,6 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
 }
 
 async function runTrivy(): Promise<number> {
-    whitelistHandler.init();
     const trivyPath = await getTrivy();
     console.log(util.format("Trivy executable found at path ", trivyPath));
     const trivyEnv = await getTrivyEnvVariables();
@@ -101,6 +100,7 @@ async function runDockle(): Promise<void> {
 }
 
 async function run(): Promise<void> {
+    whitelistHandler.init();
     const trivyStatus = await runTrivy();
     const addCISChecks = inputHelper.addCISChecks;
     if (addCISChecks.toLowerCase() === "true") {

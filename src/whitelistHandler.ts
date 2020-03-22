@@ -4,7 +4,6 @@ import * as jsyaml from 'js-yaml';
 let trivyWhitelistPath = "";
 let dockleWhitelistPath = "";
 export let trivyWhitelistExists = false;
-export let dockleWhitelistExists = false;
 
 export function getTrivyWhitelist(): string {
     if (trivyWhitelistExists)
@@ -13,18 +12,11 @@ export function getTrivyWhitelist(): string {
         throw new Error("Could not find whitelist file for common vulnerabilities");
 }
 
-export function getDockleWhitelist(): string {
-    if (dockleWhitelistExists)
-        return dockleWhitelistPath;
-    else
-        throw new Error("Could not find whitelist file for best practice vulnerabilities");
-}
-
 function initializeTrivyWhitelistPath() {
     let curDate = Date.now();
     let trivyWhitelistDir = `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/trivy`;
     fs.mkdirSync(trivyWhitelistDir, { recursive: true });
-    trivyWhitelistPath = trivyWhitelistDir + "/whitelist";
+    trivyWhitelistPath = trivyWhitelistDir + "/.trivyignore";
 }
 
 function initializeDockleWhitelistPath() {
@@ -33,19 +25,21 @@ function initializeDockleWhitelistPath() {
 }
 
 export function init() {
-    const whitelistFilePath = `${process.env['GITHUB_WORKSPACE']}/.github/containerscan/whitelist`;
+    const whitelistFilePath = `${process.env['GITHUB_WORKSPACE']}/.github/containerscan/whitelist.yaml`;
     if (!fs.existsSync(whitelistFilePath)) {
         console.log("Could not find whitelist file.");
         return;
     }
+
     initializeTrivyWhitelistPath();
     initializeDockleWhitelistPath();
+
     try {
-        var whitelist_yaml = jsyaml.safeLoad(fs.readFileSync(whitelistFilePath, 'utf8'));
-        if (whitelist_yaml.general) {
-            if (whitelist_yaml.general.common_vulnerabilities) {
+        const whitelistYaml = jsyaml.safeLoad(fs.readFileSync(whitelistFilePath, 'utf8'));
+        if (whitelistYaml.general) {
+            if (whitelistYaml.general.commonVulnerabilities) {
                 trivyWhitelistExists = true;
-                let vulnArray: string[] = whitelist_yaml.general.common_vulnerabilities;
+                const vulnArray: string[] = whitelistYaml.general.commonVulnerabilities;
                 let trivyWhitelistContent = "";
                 vulnArray.forEach(vuln => {
                     trivyWhitelistContent += vuln;
@@ -53,9 +47,8 @@ export function init() {
                 });
                 fs.writeFileSync(trivyWhitelistPath, trivyWhitelistContent);
             }
-            if (whitelist_yaml.general.best_practice_vulnerabilities) {
-                dockleWhitelistExists = true;
-                let vulnArray: string[] = whitelist_yaml.general.best_practice_vulnerabilities;
+            if (whitelistYaml.general.bestPracticeVulnerabilities) {
+                const vulnArray: string[] = whitelistYaml.general.bestPracticeVulnerabilities;
                 let dockleWhitelistContent = "";
                 vulnArray.forEach(vuln => {
                     dockleWhitelistContent += vuln;
@@ -65,6 +58,6 @@ export function init() {
             }
         }
     } catch (error) {
-        throw new Error("Error while loading whitelist file")
+        throw new Error("Error while parsing whitelist file. Error: " + error);
     }
 }

@@ -16,6 +16,9 @@ inputs:
   add-CIS-checks:
     description: 'Add CIS checks to build secure and best pracitce Docker images'
     default: 'true'
+  github-token:
+    description: 'Github token'
+    default: ${{ github.token }}
 
 outputs:
   scan-report:

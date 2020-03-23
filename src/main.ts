@@ -106,6 +106,7 @@ async function runDockle(): Promise<number> {
 }
 
 async function run(): Promise<void> {
+    whitelistHandler.init();
     const trivyStatus = await runTrivy();
     let dockleStatus: number;
     if (inputHelper.isCisChecksEnabled()) {

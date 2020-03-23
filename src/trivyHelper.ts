@@ -132,5 +132,9 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
 
 export function printFormattedOutput() {
     const trivyOutputJson = getTrivyOutput();
-    Table.printTable(trivyOutputJson);
+    const testCases = [
+        { index: 3, text: 'I would like some gelb bananen bitte', value: 100 },
+        { index: 4, text: 'I hope batch update is working', value: 300 },
+      ];
+    Table.printTable(testCases);
 }

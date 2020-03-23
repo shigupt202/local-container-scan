@@ -132,20 +132,33 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
 
 export function printFormattedOutput() {
     const trivyOutputJson = getTrivyOutput();
-    let rows = [];
+    // let rows = [];
+    // trivyOutputJson.forEach(ele => {
+    //     if (ele && ele["Vulnerabilities"]) {
+    //         ele["Vulnerabilities"].forEach((cve: any) => {
+    //             let row = { "VulnerabilityID": "", "PkgName": "", "Severity": "", "Description": "" };
+    //             // if (cve["References"])
+    //             //     row["VulnerabilityID"] = `<a href="${cve["References"][0]}">${cve["VulnerabilityID"]}</a>`;
+    //             // else
+    //             row["VulnerabilityID"] = cve["VulnerabilityID"];
+    //             row["PkgName"] = cve["PkgName"];
+    //             row["Severity"] = cve["Severity"];
+    //             rows.push(row);
+    //         });
+    //     }
+    // });
+    // Table.printTable(rows);
+
     trivyOutputJson.forEach(ele => {
         if (ele && ele["Vulnerabilities"]) {
             ele["Vulnerabilities"].forEach((cve: any) => {
-                let row = { "VulnerabilityID": "", "PkgName": "", "Severity": "", "Description": "" };
-                if (cve["References"])
-                    row["VulnerabilityID"] = `<a href="${cve["References"][0]}">${cve["VulnerabilityID"]}</a>`;
-                else
-                    row["VulnerabilityID"] = cve["VulnerabilityID"];
-                row["PkgName"] = cve["PkgName"];
-                row["Severity"] = cve["Severity"];
-                rows.push(row);
+                console.log("---------------------------------------------");
+                console.log(`VULNERABILITY ID: ${cve["VulnerabilityID"]}`);
+                console.log(`PACKAGE NAME: ${cve["PkgName"]}`);
+                console.log(`SEVERITY: ${cve["Severity"]}`);
+                console.log(`DESCRIPTION: ${cve["Description"]}`);
+                console.log("---------------------------------------------");
             });
         }
     });
-    Table.printTable(rows);
 }

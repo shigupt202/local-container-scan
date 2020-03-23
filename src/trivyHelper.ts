@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 import * as fileHelper from './fileHelper';
+import * as Table from 'console-table-printer';
 const semver = require('semver');
 
 export const TRIVY_EXIT_CODE = 5;
@@ -127,4 +128,9 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
         default:
             throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
     }
+}
+
+export function printFormattedOutput() {
+    const trivyOutputJson = getTrivyOutput();
+    Table.printTable(trivyOutputJson);
 }

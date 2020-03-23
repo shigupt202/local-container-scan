@@ -3,14 +3,16 @@ import * as fs from 'fs';
 import * as util from 'util';
 import { ExecOptions } from '@actions/exec/lib/interfaces';
 import { ToolRunner } from '@actions/exec/lib/toolrunner';
-import { getTrivy } from './trivyHelper';
-import { getDockle } from './dockleHelper';
+import { GitHubClient } from './githubClient';
+import * as dockleHelper from './dockleHelper';
 import * as inputHelper from './inputHelper';
+import * as trivyHelper from './trivyHelper';
+import * as utils from './utils';
 
 async function getWhitelistFileLoc(whitelistFilePath: string): Promise<string> {
     const githubWorkspace = process.env['GITHUB_WORKSPACE'];
     const whitelistFileLoc = githubWorkspace + "/" + whitelistFilePath;
-    if(!fs.existsSync(whitelistFileLoc)){
+    if (!fs.existsSync(whitelistFileLoc)) {
         throw new Error("Could not find whitelist file. (Make sure that you use actions/checkout in your workflow)");
     }
     console.log("Whitelist file found at " + whitelistFileLoc);
@@ -33,7 +35,9 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
         trivyEnv["TRIVY_PASSWORD"] = password;
     }
 
-    trivyEnv["TRIVY_EXIT_CODE"] = "5";
+    trivyEnv["TRIVY_EXIT_CODE"] = trivyHelper.TRIVY_EXIT_CODE.toString();
+    trivyEnv["TRIVY_FORMAT"] = "json";
+    trivyEnv["TRIVY_OUTPUT"] = trivyHelper.getOutputPath();
 
     try {
         const whitelistFilePath = inputHelper.whitelistFilePath;
@@ -72,7 +76,7 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     return trivyEnv;
 }
 
-async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
+async function getDockleEnvVariables(): Promise<{ [key: string]: string }> {
     let dockleEnv: { [key: string]: string } = {};
     for (let key in process.env) {
         dockleEnv[key] = process.env[key] || "";
@@ -91,7 +95,7 @@ async function setDockleEnvVariables(): Promise<{ [key: string]: string }> {
 }
 
 async function runTrivy(): Promise<number> {
-    const trivyPath = await getTrivy();
+    const trivyPath = await trivyHelper.getTrivy();
     console.log(util.format("Trivy executable found at path ", trivyPath));
     const trivyEnv = await getTrivyEnvVariables();
 
@@ -106,9 +110,9 @@ async function runTrivy(): Promise<number> {
     return trivyStatus;
 }
 
-async function runDockle(): Promise<void> {
-    const docklePath = await getDockle();
-    const dockleEnv = await setDockleEnvVariables();
+async function runDockle(): Promise<number> {
+    const docklePath = await dockleHelper.getDockle();
+    const dockleEnv = await getDockleEnvVariables();
     const imageName = inputHelper.imageName;
 
     const dockleOptions: ExecOptions = {
@@ -116,20 +120,30 @@ async function runDockle(): Promise<void> {
         ignoreReturnCode: true
     };
 
-    const dockleToolRunner = new ToolRunner(docklePath, [imageName], dockleOptions);
-    await dockleToolRunner.exec();
+    let dockleArgs = ['-f', 'json', '-o', dockleHelper.getOutputPath(), '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName];
+    const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
+    const dockleStatus = await dockleToolRunner.exec();
+    return dockleStatus;
 }
 
 async function run(): Promise<void> {
     const trivyStatus = await runTrivy();
-    const addCISChecks = inputHelper.addCISChecks;
-    if (addCISChecks.toLowerCase() === "true") {
-        await runDockle();
+    let dockleStatus: number;
+    if (inputHelper.isCisChecksEnabled()) {
+        dockleStatus = await runDockle();
+    }
+
+    try {
+        const checkRunPayload = utils.getCheckRunPayloadWithScanResult(trivyStatus, dockleStatus);
+        const githubClient = new GitHubClient(process.env.GITHUB_REPOSITORY, inputHelper.githubToken);
+        await githubClient.createCheckRun(checkRunPayload);
+    } catch (error) {
+        core.warning(`An error occured while creating the check run for container scan. Error: ${error}`);
     }
 
     if (trivyStatus == 0) {
         console.log("No vulnerabilities were detected in the container image");
-    } else if (trivyStatus == 5) {
+    } else if (trivyStatus == trivyHelper.TRIVY_EXIT_CODE) {
         throw new Error("Vulnerabilities were detected in the container image");
     } else {
         throw new Error("An error occured while scanning the container image for vulnerabilities");

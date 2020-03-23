@@ -7,3 +7,7 @@ export const password = core.getInput("password");
 export const whitelistFilePath = core.getInput("whitelist-file");
 export const severityThreshold = core.getInput("severity-threshold");
 export const addCISChecks = core.getInput("add-CIS-checks");
+
+export function isCisChecksEnabled(): boolean {
+    return addCISChecks.toLowerCase() === "true";
+}

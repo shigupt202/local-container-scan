@@ -100,7 +100,7 @@ async function runDockle(): Promise<number> {
         ignoreReturnCode: true
     };
 
-    let dockleArgs = ['-f', 'json', '-o', dockleHelper.getOutputPath(), '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName];
+    let dockleArgs = ['-f', 'json', '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName];
     const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
     const dockleStatus = await dockleToolRunner.exec();
     return dockleStatus;

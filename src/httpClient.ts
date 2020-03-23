@@ -6,6 +6,15 @@ import * as core from '@actions/core';
 
 var httpCallbackClient = new httpClient.HttpClient('GITHUB_RUNNER', null, {});
 
+export enum StatusCodes {
+    OK = 200,
+    CREATED = 201,
+    UNAUTHORIZED = 401,
+    NOT_FOUND = 404,
+    INTERNAL_SERVER_ERROR = 500,
+    SERVICE_UNAVAILABLE = 503
+}
+
 export class WebRequest {
     public method: string;
     public uri: string;
@@ -41,7 +50,7 @@ export async function sendRequest(request: WebRequest, options?: WebRequestOptio
             if (request.body && typeof(request.body) !== 'string' && !request.body["readable"]) {
                 request.body = fs.createReadStream(request.body["path"]);
             }
-            
+
             let response: WebResponse = await sendRequestInternal(request);
             if (retriableStatusCodes.indexOf(response.statusCode) != -1 && ++i < retryCount) {
                 core.debug(util.format("Encountered a retriable status code: %s. Message: '%s'.", response.statusCode, response.statusMessage));

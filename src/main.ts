@@ -3,16 +3,16 @@ import * as fs from 'fs';
 import * as util from 'util';
 import { ExecOptions } from '@actions/exec/lib/interfaces';
 import { ToolRunner } from '@actions/exec/lib/toolrunner';
+import { GitHubClient } from './githubClient';
 import * as dockleHelper from './dockleHelper';
-import * as fileHelper from './fileHelper';
-import * as gitHubHelper from './gitHubHelper';
 import * as inputHelper from './inputHelper';
 import * as trivyHelper from './trivyHelper';
+import * as utils from './utils';
 
 async function getWhitelistFileLoc(whitelistFilePath: string): Promise<string> {
     const githubWorkspace = process.env['GITHUB_WORKSPACE'];
     const whitelistFileLoc = githubWorkspace + "/" + whitelistFilePath;
-    if(!fs.existsSync(whitelistFileLoc)){
+    if (!fs.existsSync(whitelistFileLoc)) {
         throw new Error("Could not find whitelist file. (Make sure that you use actions/checkout in your workflow)");
     }
     console.log("Whitelist file found at " + whitelistFileLoc);
@@ -37,7 +37,7 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
 
     trivyEnv["TRIVY_EXIT_CODE"] = trivyHelper.TRIVY_EXIT_CODE.toString();
     trivyEnv["TRIVY_FORMAT"] = "json";
-    trivyEnv["TRIVY_OUTPUT"] = fileHelper.getTrivyOutputPath();
+    trivyEnv["TRIVY_OUTPUT"] = trivyHelper.getOutputPath();
 
     try {
         const whitelistFilePath = inputHelper.whitelistFilePath;
@@ -106,7 +106,7 @@ async function runTrivy(): Promise<number> {
     };
 
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
-    const trivyStatus = await trivyToolRunner.exec();    
+    const trivyStatus = await trivyToolRunner.exec();
     return trivyStatus;
 }
 
@@ -120,24 +120,24 @@ async function runDockle(): Promise<number> {
         ignoreReturnCode: true
     };
 
-    let dockleArgs = [ '-f', 'json', '-o', fileHelper.getDockleOutputPath(), '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName ];
+    let dockleArgs = ['-f', 'json', '-o', dockleHelper.getOutputPath(), '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName];
     const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
-    const dockleStatus =  await dockleToolRunner.exec();
+    const dockleStatus = await dockleToolRunner.exec();
     return dockleStatus;
 }
 
 async function run(): Promise<void> {
     const trivyStatus = await runTrivy();
     let dockleStatus: number;
-    if (dockleHelper.isCisChecksEnabled()) {
+    if (inputHelper.isCisChecksEnabled()) {
         dockleStatus = await runDockle();
     }
 
     try {
-        console.log("Creating check run...");
-        await gitHubHelper.createCheckRunWithScanResult(trivyStatus, dockleStatus);
-        console.log("Check run created successfully...");
-    } catch(error) {
+        const checkRunPayload = utils.getCheckRunPayloadWithScanResult(trivyStatus, dockleStatus);
+        const githubClient = new GitHubClient(process.env.GITHUB_REPOSITORY, inputHelper.githubToken);
+        await githubClient.createCheckRun(checkRunPayload);
+    } catch (error) {
         core.warning(`An error occured while creating the check run for container scan. Error: ${error}`);
     }
 

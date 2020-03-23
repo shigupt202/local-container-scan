@@ -4,12 +4,9 @@ inputs:
   image-name:
     description: 'Docker image to scan'
     required: true
-  whitelist-file:
-    description: 'Path to the whitelist file'
-    required: false
   severity-threshold:
     description: 'severities of vulnerabilities to be displayed (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)'
-    reuired: false
+    required: false
   username:
     description: 'Username to authenticate to the Docker registry'
     required: false
@@ -17,7 +14,7 @@ inputs:
     description: 'Password to authenticate to the Docker registry'
     required: false
   github-token:
-    description: 'Github token to download whitelist file'
+    description: 'Github token'
     default: ${{ github.token }}
   add-CIS-checks:
     description: 'Add CIS checks to build secure and best pracitce Docker images'

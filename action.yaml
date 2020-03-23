@@ -13,12 +13,12 @@ inputs:
   password:
     description: 'Password to authenticate to the Docker registry'
     required: false
-  add-CIS-checks:
-    description: 'Add CIS checks to build secure and best pracitce Docker images'
-    default: 'true'
   github-token:
     description: 'Github token'
     default: ${{ github.token }}
+  add-CIS-checks:
+    description: 'Add CIS checks to build secure and best pracitce Docker images'
+    default: 'true'
 
 outputs:
   scan-report:

@@ -21,6 +21,7 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     }
 
     trivyEnv["TRIVY_EXIT_CODE"] = "5";
+    trivyEnv["GITHUB_TOKEN"] = inputHelper.githubToken;
 
     if(whitelistHandler.trivyWhitelistExists)   {
         trivyEnv["TRIVY_IGNOREFILE"] = whitelistHandler.getTrivyWhitelist();

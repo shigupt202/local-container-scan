@@ -152,12 +152,12 @@ export function printFormattedOutput() {
     trivyOutputJson.forEach(ele => {
         if (ele && ele["Vulnerabilities"]) {
             ele["Vulnerabilities"].forEach((cve: any) => {
-                console.log("---------------------------------------------");
+                console.log("________________________________________________________________________");
                 console.log(`VULNERABILITY ID: ${cve["VulnerabilityID"]}`);
                 console.log(`PACKAGE NAME: ${cve["PkgName"]}`);
                 console.log(`SEVERITY: ${cve["Severity"]}`);
                 console.log(`DESCRIPTION: ${cve["Description"]}`);
-                console.log("---------------------------------------------");
+                console.log("________________________________________________________________________");
             });
         }
     });

@@ -115,6 +115,9 @@ async function run(): Promise<void> {
     let dockleStatus: number;
     if (inputHelper.isCisChecksEnabled()) {
         dockleStatus = await runDockle();
+        if(dockleStatus == dockleHelper.DOCKLE_EXIT_CODE) {
+            dockleHelper.printFormattedOutput();
+        }
     }
 
     try {

@@ -37,13 +37,14 @@ export async function getDockle(): Promise<string> {
     return dockleToolPath;
 }
 
-export function isCisChecksEnabled(): boolean {
-    return inputHelper.addCISChecks.toLowerCase() === "true";
+export function getOutputPath(): string {
+    const dockleOutputPath = `${fileHelper.getContainerScanDirectory()}/dockleoutput.json`;
+    return dockleOutputPath;
 }
 
 export function getSummary(dockleStatus: number): string {
     let summary = '';
-    switch(dockleStatus) {
+    switch (dockleStatus) {
         case 0:
             summary = 'No CIS benchmark violations were detected in the container image.'
             break;
@@ -54,18 +55,18 @@ export function getSummary(dockleStatus: number): string {
             summary = 'An error occured while scanning the container image for CIS benchmark violations.';
             break;
     }
-    
+
     return `- ${summary}`;
 }
 
 export function getText(dockleStatus: number): string {
     const cisIds = getCisIds(dockleStatus);
-    return `**Best Practices** -\n${cisIds.join('\n')}`;
+    return `**Best Practices Violations** -\n${cisIds.join('\n')}`;
 }
 
 function getCisIds(dockleStatus: number): string[] {
     let cisIds: string[] = [];
-    if(dockleStatus == DOCKLE_EXIT_CODE) {
+    if (dockleStatus === DOCKLE_EXIT_CODE) {
         const dockleOutputJson = getDockleOutput();
         cisIds = dockleOutputJson['details'].map(dd => dd['code']);
     }
@@ -74,7 +75,7 @@ function getCisIds(dockleStatus: number): string[] {
 }
 
 function getDockleOutput(): any {
-    const path = fileHelper.getDockleOutputPath();
+    const path = getOutputPath();
     return fileHelper.getFileJson(path);
 }
 
@@ -85,7 +86,7 @@ function getCisSummary(): any {
     if (dockleSummary) {
         cisSummary = `CIS benchmark test summary -\n"fatal": ${dockleSummary["fatal"]}\n"warn": ${dockleSummary["warn"]}\n"info": ${dockleSummary["info"]}\n"pass": ${dockleSummary["pass"]}`;
     }
-    
+
     return cisSummary;
 }
 

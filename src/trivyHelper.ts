@@ -37,6 +37,11 @@ export async function getTrivy(): Promise<string> {
     return trivyToolPath;
 }
 
+export function getOutputPath(): string {
+    const trivyOutputPath = `${fileHelper.getContainerScanDirectory()}/trivyoutput.json`;
+    return trivyOutputPath;
+}
+
 export function getText(trivyStatus: number): string {
     const vulnerabilityIds = getVulnerabilityIds(trivyStatus);
     return `**CVE's** -\n${vulnerabilityIds.join('\n')}`;
@@ -44,7 +49,7 @@ export function getText(trivyStatus: number): string {
 
 export function getSummary(trivyStatus: number): string {
     let summary = '';
-    switch(trivyStatus) {
+    switch (trivyStatus) {
         case 0:
             summary = 'No vulnerabilities were detected in the container image'
             break;
@@ -56,20 +61,20 @@ export function getSummary(trivyStatus: number): string {
             const mediumCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'MEDIUM').length;
             const highCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'HIGH').length;
             const criticalCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'CRITICAL').length;
-        
+
             summary = `Found ${total} vulnerabilities -\nUNKNOWN: ${unknownCount}\nLOW: ${lowCount}\nMEDIUM: ${mediumCount}\nHIGH: ${highCount}\nCRITICAL: ${criticalCount}`;
             break;
         default:
             summary = 'An error occured while scanning the container image for vulnerabilities';
             break;
     }
-    
+
     return summary;
 }
 
 function getVulnerabilityIds(trivyStatus: number): string[] {
     let vulnerabilityIds: string[] = [];
-    if(trivyStatus == TRIVY_EXIT_CODE) {
+    if (trivyStatus == TRIVY_EXIT_CODE) {
         const vulnerabilities = getVulnerabilities();
         vulnerabilityIds = vulnerabilities.map(v => v['VulnerabilityID']);
     }
@@ -78,7 +83,7 @@ function getVulnerabilityIds(trivyStatus: number): string[] {
 }
 
 function getTrivyOutput(): any {
-    const path = fileHelper.getTrivyOutputPath();
+    const path = getOutputPath();
     return fileHelper.getFileJson(path);
 }
 
@@ -86,7 +91,7 @@ function getVulnerabilities(): any[] {
     const trivyOutputJson = getTrivyOutput();
     let vulnerabilities: any[] = [];
     trivyOutputJson.forEach((ele: any) => {
-        if(ele && ele["Vulnerabilities"]) {
+        if (ele && ele["Vulnerabilities"]) {
             ele["Vulnerabilities"].forEach((cve: any) => {
                 vulnerabilities.push(cve);
             });

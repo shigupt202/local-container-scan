@@ -1,46 +1,27 @@
 import * as fs from 'fs'
 
-let containerScanDirectory = '';
+let CONTAINER_SCAN_DIRECTORY = '';
 
 export function getFileJson(path: string): any {
     try {
         const rawContent = fs.readFileSync(path, 'utf-8');
-        const json = JSON.parse(rawContent);
-        return json;
-    } catch(ex) {
+        return JSON.parse(rawContent);
+    } catch (ex) {
         throw new Error(`An error occured while parsing the contents of the file: ${path}. Error: ${ex}`);
     }
 }
 
 export function getContainerScanDirectory(): string {
-    if(!containerScanDirectory) {
-        containerScanDirectory = `${process.env['GITHUB_WORKSPACE']}/_temp/containerscan_${Date.now()}`;
-        ensureDirExists(containerScanDirectory);
+    if (!CONTAINER_SCAN_DIRECTORY) {
+        CONTAINER_SCAN_DIRECTORY = `${process.env['GITHUB_WORKSPACE']}/_temp/containerscan_${Date.now()}`;
+        ensureDirExists(CONTAINER_SCAN_DIRECTORY);
     }
 
-    return containerScanDirectory;
-}
-
-export function getTrivyOutputPath(): string {
-    const trivyOutputPath = `${getContainerScanDirectory()}/trivyoutput.json`;
-    ensureFileExists(trivyOutputPath);
-    return trivyOutputPath;
-}
-
-export function getDockleOutputPath(): string {
-    const dockleOutputPath = `${getContainerScanDirectory()}/dockleoutput.json`;
-    ensureFileExists(dockleOutputPath);
-    return dockleOutputPath;
+    return CONTAINER_SCAN_DIRECTORY;
 }
 
 function ensureDirExists(dir: string) {
-    if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir);
-    }
-}
-
-function ensureFileExists(path: string) {
-    if(!fs.existsSync(path)) {
-        fs.writeFileSync(path, '{}');
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
     }
 }

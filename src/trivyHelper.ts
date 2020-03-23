@@ -135,20 +135,16 @@ export function printFormattedOutput() {
     let rows = [];
     trivyOutputJson.forEach(ele => {
         if (ele && ele["Vulnerabilities"]) {
-            let row = { "VulnerabilityID": "", "PkgName": "", "Severity": "", "Description": "" };
-
-            if (ele["VulnerabilityID"]) {
-                if (ele["References"])
-                    row["VulnerabilityID"] = `<a href=${ele["References"]}>${ele["VulnerabilityID"]}</a>`;
+            ele["Vulnerabilities"].forEach((cve: any) => {
+                let row = { "VulnerabilityID": "", "PkgName": "", "Severity": "", "Description": "" };
+                if (cve["References"])
+                    row["VulnerabilityID"] = `<a href="${cve["References"][0]}">${cve["VulnerabilityID"]}</a>`;
                 else
-                    row["VulnerabilityID"] = ele["VulnerabilityID"];
-            } else {
-                row["VulnerabilityID"] = "-";
-            }
-            row["PkgName"] = (ele["PkgName"] || "-");
-            row["Severity"] = (ele["Severity"] || "-");
-            row["Description"] = (ele["Description"] || "-");
-            rows.push(row);
+                    row["VulnerabilityID"] = cve["VulnerabilityID"];
+                row["PkgName"] = cve["PkgName"];
+                row["Severity"] = cve["Severity"];
+                rows.push(row);
+            });
         }
     });
     Table.printTable(rows);

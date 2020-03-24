@@ -133,6 +133,8 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
 export function printFormattedOutput() {
     const trivyOutputJson = getTrivyOutput();
     let rows = [];
+    let titles = ["VULNERABILITY ID", "PACKAGE NAME", "SEVERITY", "DESCRIPTION"];
+    rows.push(titles);
     trivyOutputJson.forEach(ele => {
         if (ele && ele["Vulnerabilities"]) {
             ele["Vulnerabilities"].forEach((cve: any) => {
@@ -144,6 +146,7 @@ export function printFormattedOutput() {
                 row.push(cve["VulnerabilityID"]);
                 row.push(cve["PkgName"]);
                 row.push(cve["Severity"]);
+                row.push(cve["Description"]);
                 rows.push(row);
             });
         }

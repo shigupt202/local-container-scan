@@ -11,6 +11,15 @@ export const DOCKLE_EXIT_CODE = 5;
 const stableDockleVersion = "0.2.4";
 const dockleLatestReleaseUrl = "https://api.github.com/repos/goodwithtech/dockle/releases/latest";
 const dockleToolName = "dockle";
+const DETAILS = "details";
+const CODE = "code";
+const TITLE = "title";
+const LEVEL = "level";
+const ALERTS = "alerts";
+const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
+const TITLE_TITLE = "TITLE";
+const TITLE_SEVERITY = "SEVERITY";
+const TITLE_DESCRIPTION = "DESCRIPTION";
 
 export async function getDockle(): Promise<string> {
     const latestDockleVersion = await getLatestDockleVersion();
@@ -121,36 +130,16 @@ function getDockleDownloadUrl(dockleVersion: string): string {
 export function printFormattedOutput() {
     const dockleOutputJson = getDockleOutput();
     let rows = [];
-    let titles = ["VULNERABILITY ID", "TITLE", "SEVERITY", "DESCRIPTION"];
+    let titles = [TITLE_VULNERABILITY_ID, TITLE_TITLE, TITLE_SEVERITY, TITLE_DESCRIPTION];
     rows.push(titles);
-    dockleOutputJson["details"].forEach(ele => {
+    dockleOutputJson[DETAILS].forEach(ele => {
                 let row = [];
-                row.push(ele["code"]);
-                row.push(ele["title"]);
-                row.push(ele["level"]);
-                row.push(ele["alerts"][0]);
+                row.push(ele[CODE]);
+                row.push(ele[TITLE]);
+                row.push(ele[LEVEL]);
+                row.push(ele[ALERTS][0]);
                 rows.push(row);           
     });
     
-    let config = {
-        columns: {
-          0: {
-            width: 25,
-            wrapWord: true
-          },
-          1: {
-            width: 25,
-            wrapWord: true
-          },
-          2: {
-            width: 25,
-            wrapWord: true
-          },
-          3: {
-            width: 65,
-            wrapWord: true
-          }
-        }
-      };
-    console.log(table.table(rows, config));
+    console.log(table.table(rows, utils.getConfigForTable(25, 25, 25, 65)));
 }

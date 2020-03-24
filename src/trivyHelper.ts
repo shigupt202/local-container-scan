@@ -6,11 +6,21 @@ import * as core from '@actions/core';
 import * as fileHelper from './fileHelper';
 import * as table from 'table';
 import * as semver from 'semver';
+import * as utils from './utils';
 
 export const TRIVY_EXIT_CODE = 5;
 const stableTrivyVersion = "0.5.2";
 const trivyLatestReleaseUrl = "https://api.github.com/repos/aquasecurity/trivy/releases/latest";
 const trivyToolName = "trivy";
+const VULNERABILITIES = "Vulnerabilities";
+const VULNERABILITY_ID = "VulnerabilityID";
+const PACKAGE_NAME = "PkgName";
+const SEVERITY = "Severity";
+const DESCRIPTION = "Description";
+const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
+const TITLE_PACKAGE_NAME = "PACKAGE NAME";
+const TITLE_SEVERITY = "SEVERITY";
+const TITLE_DESCRIPTION = "DESCRIPTION";
 
 export async function getTrivy(): Promise<string> {
     const latestTrivyVersion = await getLatestTrivyVersion();
@@ -77,7 +87,7 @@ function getVulnerabilityIds(trivyStatus: number): string[] {
     let vulnerabilityIds: string[] = [];
     if (trivyStatus == TRIVY_EXIT_CODE) {
         const vulnerabilities = getVulnerabilities();
-        vulnerabilityIds = vulnerabilities.map(v => v['VulnerabilityID']);
+        vulnerabilityIds = vulnerabilities.map(v => v[VULNERABILITY_ID]);
     }
 
     return vulnerabilityIds;
@@ -92,8 +102,8 @@ function getVulnerabilities(): any[] {
     const trivyOutputJson = getTrivyOutput();
     let vulnerabilities: any[] = [];
     trivyOutputJson.forEach((ele: any) => {
-        if (ele && ele["Vulnerabilities"]) {
-            ele["Vulnerabilities"].forEach((cve: any) => {
+        if (ele && ele[VULNERABILITIES]) {
+            ele[VULNERABILITIES].forEach((cve: any) => {
                 vulnerabilities.push(cve);
             });
         }
@@ -133,40 +143,20 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
 export function printFormattedOutput() {
     const trivyOutputJson = getTrivyOutput();
     let rows = [];
-    let titles = ["VULNERABILITY ID", "PACKAGE NAME", "SEVERITY", "DESCRIPTION"];
+    let titles = [TITLE_VULNERABILITY_ID, TITLE_PACKAGE_NAME, TITLE_SEVERITY, TITLE_DESCRIPTION];
     rows.push(titles);
     trivyOutputJson.forEach(ele => {
-        if (ele && ele["Vulnerabilities"]) {
-            ele["Vulnerabilities"].forEach((cve: any) => {
+        if (ele && ele[VULNERABILITIES]) {
+            ele[VULNERABILITIES].forEach((cve: any) => {
                 let row = [];
-                row.push(cve["VulnerabilityID"]);
-                row.push(cve["PkgName"]);
-                row.push(cve["Severity"]);
-                row.push(cve["Description"]);
+                row.push(cve[VULNERABILITY_ID]);
+                row.push(cve[PACKAGE_NAME]);
+                row.push(cve[SEVERITY]);
+                row.push(cve[DESCRIPTION]);
                 rows.push(row);
             });
         }
     });
-    
-    let config = {
-        columns: {
-          0: {
-            width: 25,
-            wrapWord: true
-          },
-          1: {
-            width: 25,
-            wrapWord: true
-          },
-          2: {
-            width: 25,
-            wrapWord: true
-          },
-          3: {
-            width: 65,
-            wrapWord: true
-          }
-        }
-      };
-    console.log(table.table(rows, config));
+
+    console.log(table.table(rows, utils.getConfigForTable(25, 25, 25, 65)));
 }

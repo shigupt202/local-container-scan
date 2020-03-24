@@ -54,3 +54,28 @@ function getCheckText(trivyStatus: number, dockleStatus: number): string {
 
     return text;
 }
+
+export function getConfigForTable(col1_width: number, col2_width: number, col3_width: number, col4_width: number): any {
+    let config = {
+        columns: {
+          0: {
+            width: col1_width,
+            wrapWord: true
+          },
+          1: {
+            width: col2_width,
+            wrapWord: true
+          },
+          2: {
+            width: col3_width,
+            wrapWord: true
+          },
+          3: {
+            width: col4_width,
+            wrapWord: true
+          }
+        }
+      };
+
+      return config;
+}

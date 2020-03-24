@@ -4,7 +4,8 @@ import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 import * as fileHelper from './fileHelper';
-const semver = require('semver');
+import * as table from 'table';
+import * as semver from 'semver';
 
 export const TRIVY_EXIT_CODE = 5;
 const stableTrivyVersion = "0.5.2";
@@ -131,16 +132,41 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
 
 export function printFormattedOutput() {
     const trivyOutputJson = getTrivyOutput();
+    let rows = [];
+    let titles = ["VULNERABILITY ID", "PACKAGE NAME", "SEVERITY", "DESCRIPTION"];
+    rows.push(titles);
     trivyOutputJson.forEach(ele => {
         if (ele && ele["Vulnerabilities"]) {
             ele["Vulnerabilities"].forEach((cve: any) => {
-                console.log("________________________________________________________________________");
-                console.log(`VULNERABILITY ID: ${cve["VulnerabilityID"]}`);
-                console.log(`PACKAGE NAME: ${cve["PkgName"]}`);
-                console.log(`SEVERITY: ${cve["Severity"]}`);
-                console.log(`DESCRIPTION: ${cve["Description"]}`);
-                console.log("________________________________________________________________________");
+                let row = [];
+                row.push(cve["VulnerabilityID"]);
+                row.push(cve["PkgName"]);
+                row.push(cve["Severity"]);
+                row.push(cve["Description"]);
+                rows.push(row);
             });
         }
     });
+    
+    let config = {
+        columns: {
+          0: {
+            width: 25,
+            wrapWord: true
+          },
+          1: {
+            width: 25,
+            wrapWord: true
+          },
+          2: {
+            width: 25,
+            wrapWord: true
+          },
+          3: {
+            width: 65,
+            wrapWord: true
+          }
+        }
+      };
+    console.log(table.table(rows, config));
 }

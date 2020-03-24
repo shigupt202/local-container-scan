@@ -4,8 +4,8 @@ import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 import * as fileHelper from './fileHelper';
-import * as inputHelper from './inputHelper';
-const semver = require('semver');
+import * as table from 'table';
+import * as semver from 'semver';
 
 export const DOCKLE_EXIT_CODE = 5;
 const stableDockleVersion = "0.2.4";
@@ -120,12 +120,37 @@ function getDockleDownloadUrl(dockleVersion: string): string {
 
 export function printFormattedOutput() {
     const dockleOutputJson = getDockleOutput();
+    let rows = [];
+    let titles = ["VULNERABILITY ID", "TITLE", "SEVERITY", "DESCRIPTION"];
+    rows.push(titles);
     dockleOutputJson["details"].forEach(ele => {
-        console.log("________________________________________________________________________");
-        console.log(`VULNERABILITY ID: ${ele["code"]}`);
-        console.log(`TITLE: ${ele["title"]}`);
-        console.log(`SEVERITY: ${ele["level"]}`);
-        console.log(`DESCRIPTION: ${ele["alerts"][0]}`);
-        console.log("________________________________________________________________________");
+                let row = [];
+                row.push(ele["code"]);
+                row.push(ele["title"]);
+                row.push(ele["level"]);
+                row.push(ele["alerts"][0]);
+                rows.push(row);           
     });
+    
+    let config = {
+        columns: {
+          0: {
+            width: 25,
+            wrapWord: true
+          },
+          1: {
+            width: 25,
+            wrapWord: true
+          },
+          2: {
+            width: 25,
+            wrapWord: true
+          },
+          3: {
+            width: 65,
+            wrapWord: true
+          }
+        }
+      };
+    console.log(table.table(rows, config));
 }

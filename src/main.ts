@@ -27,7 +27,7 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     trivyEnv["TRIVY_OUTPUT"] = trivyHelper.getOutputPath();
     trivyEnv["GITHUB_TOKEN"] = inputHelper.githubToken;
 
-    if(whitelistHandler.trivyWhitelistExists)   {
+    if (whitelistHandler.trivyWhitelistExists) {
         trivyEnv["TRIVY_IGNOREFILE"] = whitelistHandler.getTrivyWhitelist();
     }
 
@@ -109,9 +109,15 @@ async function runDockle(): Promise<number> {
 async function run(): Promise<void> {
     whitelistHandler.init();
     const trivyStatus = await runTrivy();
+    if (trivyStatus === trivyHelper.TRIVY_EXIT_CODE) {
+        trivyHelper.printFormattedOutput();
+    }
     let dockleStatus: number;
     if (inputHelper.isCisChecksEnabled()) {
         dockleStatus = await runDockle();
+        if (dockleStatus === dockleHelper.DOCKLE_EXIT_CODE) {
+            dockleHelper.printFormattedOutput();
+        }
     }
 
     try {

@@ -128,3 +128,19 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
             throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
     }
 }
+
+export function printFormattedOutput() {
+    const trivyOutputJson = getTrivyOutput();
+    trivyOutputJson.forEach(ele => {
+        if (ele && ele["Vulnerabilities"]) {
+            ele["Vulnerabilities"].forEach((cve: any) => {
+                console.log("________________________________________________________________________");
+                console.log(`VULNERABILITY ID: ${cve["VulnerabilityID"]}`);
+                console.log(`PACKAGE NAME: ${cve["PkgName"]}`);
+                console.log(`SEVERITY: ${cve["Severity"]}`);
+                console.log(`DESCRIPTION: ${cve["Description"]}`);
+                console.log("________________________________________________________________________");
+            });
+        }
+    });
+}

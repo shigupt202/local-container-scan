@@ -117,3 +117,15 @@ function getDockleDownloadUrl(dockleVersion: string): string {
             throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
     }
 }
+
+export function printFormattedOutput() {
+    const dockleOutputJson = getDockleOutput();
+    dockleOutputJson["details"].forEach(ele => {
+        console.log("________________________________________________________________________");
+        console.log(`VULNERABILITY ID: ${ele["code"]}`);
+        console.log(`TITLE: ${ele["title"]}`);
+        console.log(`SEVERITY: ${ele["level"]}`);
+        console.log(`DESCRIPTION: ${ele["alerts"][0]}`);
+        console.log("________________________________________________________________________");
+    });
+}

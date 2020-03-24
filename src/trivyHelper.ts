@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 import * as fileHelper from './fileHelper';
-import * as Table from 'console-table-printer';
+import * as table from 'table';
 const semver = require('semver');
 
 export const TRIVY_EXIT_CODE = 5;
@@ -132,33 +132,34 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
 
 export function printFormattedOutput() {
     const trivyOutputJson = getTrivyOutput();
-    // let rows = [];
-    // trivyOutputJson.forEach(ele => {
-    //     if (ele && ele["Vulnerabilities"]) {
-    //         ele["Vulnerabilities"].forEach((cve: any) => {
-    //             let row = { "VulnerabilityID": "", "PkgName": "", "Severity": "", "Description": "" };
-    //             // if (cve["References"])
-    //             //     row["VulnerabilityID"] = `<a href="${cve["References"][0]}">${cve["VulnerabilityID"]}</a>`;
-    //             // else
-    //             row["VulnerabilityID"] = cve["VulnerabilityID"];
-    //             row["PkgName"] = cve["PkgName"];
-    //             row["Severity"] = cve["Severity"];
-    //             rows.push(row);
-    //         });
-    //     }
-    // });
-    // Table.printTable(rows);
-
+    let rows = [];
     trivyOutputJson.forEach(ele => {
         if (ele && ele["Vulnerabilities"]) {
             ele["Vulnerabilities"].forEach((cve: any) => {
-                console.log("________________________________________________________________________");
-                console.log(`VULNERABILITY ID: ${cve["VulnerabilityID"]}`);
-                console.log(`PACKAGE NAME: ${cve["PkgName"]}`);
-                console.log(`SEVERITY: ${cve["Severity"]}`);
-                console.log(`DESCRIPTION: ${cve["Description"]}`);
-                console.log("________________________________________________________________________");
+                //let row = { "VulnerabilityID": "", "PkgName": "", "Severity": "", "Description": "" };
+                // if (cve["References"])
+                //     row["VulnerabilityID"] = `<a href="${cve["References"][0]}">${cve["VulnerabilityID"]}</a>`;
+                // else
+                let row = [];
+                row.push(cve["VulnerabilityID"]);
+                row.push(cve["PkgName"]);
+                row.push(cve["Severity"]);
+                rows.push(row);
             });
         }
     });
+    console.log(table.table(rows));
+
+    // trivyOutputJson.forEach(ele => {
+    //     if (ele && ele["Vulnerabilities"]) {
+    //         ele["Vulnerabilities"].forEach((cve: any) => {
+    //             console.log("________________________________________________________________________");
+    //             console.log(`VULNERABILITY ID: ${cve["VulnerabilityID"]}`);
+    //             console.log(`PACKAGE NAME: ${cve["PkgName"]}`);
+    //             console.log(`SEVERITY: ${cve["Severity"]}`);
+    //             console.log(`DESCRIPTION: ${cve["Description"]}`);
+    //             console.log("________________________________________________________________________");
+    //         });
+    //     }
+    // });
 }

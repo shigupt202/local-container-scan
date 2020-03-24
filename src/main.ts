@@ -82,9 +82,10 @@ async function runTrivy(): Promise<number> {
     const imageName = inputHelper.imageName;
     const trivyOptions: ExecOptions = {
         env: trivyEnv,
-        ignoreReturnCode: true
+        ignoreReturnCode: true,
+        silent: true
     };
-
+    console.log("Scanning for vulnerabilties...");
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
     const trivyStatus = await trivyToolRunner.exec();
     return trivyStatus;
@@ -97,9 +98,10 @@ async function runDockle(): Promise<number> {
 
     const dockleOptions: ExecOptions = {
         env: dockleEnv,
-        ignoreReturnCode: true
+        ignoreReturnCode: true,
+        silent: true
     };
-
+    console.log("Scanning for CIS and best practice violations...");
     let dockleArgs = ['-f', 'json', '-o', dockleHelper.getOutputPath(), '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName];
     const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
     const dockleStatus = await dockleToolRunner.exec();

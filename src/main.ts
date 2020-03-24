@@ -82,7 +82,8 @@ async function runTrivy(): Promise<number> {
     const imageName = inputHelper.imageName;
     const trivyOptions: ExecOptions = {
         env: trivyEnv,
-        ignoreReturnCode: true
+        ignoreReturnCode: true,
+        silent: true
     };
 
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);

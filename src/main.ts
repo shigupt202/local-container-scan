@@ -76,7 +76,7 @@ async function getDockleEnvVariables(): Promise<{ [key: string]: string }> {
 
 async function runTrivy(): Promise<number> {
     const trivyPath = await trivyHelper.getTrivy();
-    console.log(util.format("Trivy executable found at path ", trivyPath));
+    core.debug(util.format("Trivy executable found at path ", trivyPath));
     const trivyEnv = await getTrivyEnvVariables();
 
     const imageName = inputHelper.imageName;
@@ -93,6 +93,7 @@ async function runTrivy(): Promise<number> {
 
 async function runDockle(): Promise<number> {
     const docklePath = await dockleHelper.getDockle();
+    core.debug(util.format("Dockle executable found at path ", docklePath));
     const dockleEnv = await getDockleEnvVariables();
     const imageName = inputHelper.imageName;
 

@@ -20,7 +20,7 @@ export async function getTrivy(): Promise<string> {
         let trivyDownloadPath;
         const trivyDownloadUrl = getTrivyDownloadUrl(latestTrivyVersion);
         const trivyDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools/trivy`;
-        console.log(util.format("Could not find trivy in cache, downloading from %s", trivyDownloadUrl));
+        core.debug(util.format("Could not find trivy in cache, downloading from %s", trivyDownloadUrl));
 
         try {
             trivyDownloadPath = await toolCache.downloadTool(trivyDownloadUrl, trivyDownloadDir);

@@ -12,11 +12,11 @@ export const TRIVY_EXIT_CODE = 5;
 const stableTrivyVersion = "0.5.2";
 const trivyLatestReleaseUrl = "https://api.github.com/repos/aquasecurity/trivy/releases/latest";
 const trivyToolName = "trivy";
-const VULNERABILITIES = "Vulnerabilities";
-const VULNERABILITY_ID = "VulnerabilityID";
-const PACKAGE_NAME = "PkgName";
-const SEVERITY = "Severity";
-const DESCRIPTION = "Description";
+const KEY_VULNERABILITIES = "Vulnerabilities";
+const KEY_VULNERABILITY_ID = "VulnerabilityID";
+const KEY_PACKAGE_NAME = "PkgName";
+const KEY_SEVERITY = "Severity";
+const KEY_DESCRIPTION = "Description";
 const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
 const TITLE_PACKAGE_NAME = "PACKAGE NAME";
 const TITLE_SEVERITY = "SEVERITY";
@@ -87,7 +87,7 @@ function getVulnerabilityIds(trivyStatus: number): string[] {
     let vulnerabilityIds: string[] = [];
     if (trivyStatus == TRIVY_EXIT_CODE) {
         const vulnerabilities = getVulnerabilities();
-        vulnerabilityIds = vulnerabilities.map(v => v[VULNERABILITY_ID]);
+        vulnerabilityIds = vulnerabilities.map(v => v[KEY_VULNERABILITY_ID]);
     }
 
     return vulnerabilityIds;
@@ -102,8 +102,8 @@ function getVulnerabilities(): any[] {
     const trivyOutputJson = getTrivyOutput();
     let vulnerabilities: any[] = [];
     trivyOutputJson.forEach((ele: any) => {
-        if (ele && ele[VULNERABILITIES]) {
-            ele[VULNERABILITIES].forEach((cve: any) => {
+        if (ele && ele[KEY_VULNERABILITIES]) {
+            ele[KEY_VULNERABILITIES].forEach((cve: any) => {
                 vulnerabilities.push(cve);
             });
         }
@@ -146,17 +146,18 @@ export function printFormattedOutput() {
     let titles = [TITLE_VULNERABILITY_ID, TITLE_PACKAGE_NAME, TITLE_SEVERITY, TITLE_DESCRIPTION];
     rows.push(titles);
     trivyOutputJson.forEach(ele => {
-        if (ele && ele[VULNERABILITIES]) {
-            ele[VULNERABILITIES].forEach((cve: any) => {
+        if (ele && ele[KEY_VULNERABILITIES]) {
+            ele[KEY_VULNERABILITIES].forEach((cve: any) => {
                 let row = [];
-                row.push(cve[VULNERABILITY_ID]);
-                row.push(cve[PACKAGE_NAME]);
-                row.push(cve[SEVERITY]);
-                row.push(cve[DESCRIPTION]);
+                row.push(cve[KEY_VULNERABILITY_ID]);
+                row.push(cve[KEY_PACKAGE_NAME]);
+                row.push(cve[KEY_SEVERITY]);
+                row.push(cve[KEY_DESCRIPTION]);
                 rows.push(row);
             });
         }
     });
 
-    console.log(table.table(rows, utils.getConfigForTable(25, 25, 25, 65)));
+    let widths = [25, 25, 25, 60];
+    console.log(table.table(rows, utils.getConfigForTable(widths)));
 }

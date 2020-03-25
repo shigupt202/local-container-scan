@@ -6,16 +6,17 @@ import * as core from '@actions/core';
 import * as fileHelper from './fileHelper';
 import * as table from 'table';
 import * as semver from 'semver';
+import * as utils from './utils';
 
 export const DOCKLE_EXIT_CODE = 5;
 const stableDockleVersion = "0.2.4";
 const dockleLatestReleaseUrl = "https://api.github.com/repos/goodwithtech/dockle/releases/latest";
 const dockleToolName = "dockle";
-const DETAILS = "details";
-const CODE = "code";
-const TITLE = "title";
-const LEVEL = "level";
-const ALERTS = "alerts";
+const KEY_DETAILS = "details";
+const KEY_CODE = "code";
+const KEY_TITLE = "title";
+const KEY_LEVEL = "level";
+const KEY_ALERTS = "alerts";
 const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
 const TITLE_TITLE = "TITLE";
 const TITLE_SEVERITY = "SEVERITY";
@@ -132,14 +133,15 @@ export function printFormattedOutput() {
     let rows = [];
     let titles = [TITLE_VULNERABILITY_ID, TITLE_TITLE, TITLE_SEVERITY, TITLE_DESCRIPTION];
     rows.push(titles);
-    dockleOutputJson[DETAILS].forEach(ele => {
+    dockleOutputJson[KEY_DETAILS].forEach(ele => {
                 let row = [];
-                row.push(ele[CODE]);
-                row.push(ele[TITLE]);
-                row.push(ele[LEVEL]);
-                row.push(ele[ALERTS][0]);
+                row.push(ele[KEY_CODE]);
+                row.push(ele[KEY_TITLE]);
+                row.push(ele[KEY_LEVEL]);
+                row.push(ele[KEY_ALERTS][0]);
                 rows.push(row);           
     });
     
-    console.log(table.table(rows, utils.getConfigForTable(25, 25, 25, 65)));
+    let widths = [25, 25, 25, 60];
+    console.log(table.table(rows, utils.getConfigForTable(widths)));
 }

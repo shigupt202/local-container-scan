@@ -17,12 +17,15 @@ const KEY_CODE = "code";
 const KEY_TITLE = "title";
 const KEY_LEVEL = "level";
 const KEY_ALERTS = "alerts";
+const LEVEL_FATAL = "FATAL";
+const LEVEL_WARN = "WARN";
+const LEVEL_IGNORE = "IGNORE";
+const LEVEL_INFO = "INFO";
+const LEVEL_SKIP = "SKIP";
 const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
 const TITLE_TITLE = "TITLE";
 const TITLE_SEVERITY = "SEVERITY";
 const TITLE_DESCRIPTION = "DESCRIPTION";
-const LEVEL_IGNORE = "IGNORE";
-const LEVEL_INFO = "INFO";
 
 export async function getDockle(): Promise<string> {
     const latestDockleVersion = await getLatestDockleVersion();
@@ -72,20 +75,30 @@ export function getSummary(dockleStatus: number): string {
 }
 
 export function getText(dockleStatus: number): string {
-    const cisIds = getCisIds(dockleStatus);
-    return `**Best Practices Violations** -\n${cisIds.length > 0 ? cisIds.join('\n') : 'None found.'}`;
+    let clusteredViolations = '';
+    const cisIdsByLevel = getCisIdsByLevel(dockleStatus);
+    for (let level in cisIdsByLevel) {
+        if (cisIdsByLevel[level].length > 0) {
+            clusteredViolations = `${clusteredViolations}\n- ${level}:\n${cisIdsByLevel[level].join('\n')}`;
+        }
+    }
+    return `**Best Practices Violations** -${clusteredViolations ? clusteredViolations : '\nNone found.'}`;
 }
 
-function getCisIds(dockleStatus: number): string[] {
-    let cisIds: string[] = [];
+function getCisIdsByLevel(dockleStatus: number): any {
+    const levels: string[] = [LEVEL_FATAL, LEVEL_WARN, LEVEL_INFO, LEVEL_SKIP];
+    let cisIdsByLevel: any = {};
     if (dockleStatus === DOCKLE_EXIT_CODE) {
         const dockleOutputJson = getDockleOutput();
-        cisIds = dockleOutputJson['details']
-            .filter(isUnignored)
-            .map(dd => dd['code']);
+        const dockleDetails = dockleOutputJson['details'];
+        for (let level of levels) {
+            cisIdsByLevel[level] = dockleDetails
+                .filter(dd => dd['level'].toUpperCase() === level)
+                .map(dd => dd['code']);
+        }
     }
 
-    return cisIds;
+    return cisIdsByLevel;
 }
 
 function getDockleOutput(): any {
@@ -150,10 +163,6 @@ export function printFormattedOutput() {
         }
     });
 
-    let widths = [25, 25, 25, 60];
+    let widths = [25, 25, 15, 55];
     console.log(table.table(rows, utils.getConfigForTable(widths)));
-}
-
-let isUnignored = (cisDetail: any): boolean => {
-    return cisDetail['level'].toUpperCase() !== 'IGNORE';
 }

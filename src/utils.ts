@@ -30,7 +30,7 @@ function getCheckConclusion(trivyStatus: number, dockleStatus: number): string {
 }
 
 function getCheckSummary(trivyStatus: number, dockleStatus: number): string {
-    const header: string = `Scanned image \`${inputHelper.imageName}\`-`;
+    const header: string = `Scanned image \`${inputHelper.imageName}\`.\nSummary:`;
     const trivySummary = trivyHelper.getSummary(trivyStatus);
     let summary = `${header}\n\n${trivySummary}`;
 

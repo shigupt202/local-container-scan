@@ -114,12 +114,21 @@ async function run(): Promise<void> {
     const trivyStatus = await runTrivy();
     if (trivyStatus === trivyHelper.TRIVY_EXIT_CODE) {
         trivyHelper.printFormattedOutput();
+    } else if (trivyStatus === 0) {
+        console.log("No vulnerabilities were detected in the container image");
+    } else {
+        throw new Error("An error occured while scanning the container image for vulnerabilities");
     }
+    
     let dockleStatus: number;
     if (inputHelper.isCisChecksEnabled()) {
         dockleStatus = await runDockle();
         if (dockleStatus === dockleHelper.DOCKLE_EXIT_CODE) {
             dockleHelper.printFormattedOutput();
+        } else if (dockleStatus === 0) {
+            console.log("No best practice violations were detected in the container image");
+        } else {
+            throw new Error("An error occured while scanning the container image for best practice violations");
         }
     }
 
@@ -131,12 +140,8 @@ async function run(): Promise<void> {
         core.warning(`An error occured while creating the check run for container scan. Error: ${error}`);
     }
 
-    if (trivyStatus == 0) {
-        console.log("No vulnerabilities were detected in the container image");
-    } else if (trivyStatus == trivyHelper.TRIVY_EXIT_CODE) {
+    if (trivyStatus == trivyHelper.TRIVY_EXIT_CODE) {
         throw new Error("Vulnerabilities were detected in the container image");
-    } else {
-        throw new Error("An error occured while scanning the container image for vulnerabilities");
     }
 }
 

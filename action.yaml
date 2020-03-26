@@ -5,8 +5,9 @@ inputs:
     description: 'Docker image to scan'
     required: true
   severity-threshold:
-    description: 'severities of vulnerabilities to be displayed (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)'
+    description: 'Severities of vulnerabilities to be displayed (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)'
     required: false
+    default: 'HIGH'
   username:
     description: 'Username to authenticate to the Docker registry'
     required: false

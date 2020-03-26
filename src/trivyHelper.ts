@@ -65,7 +65,7 @@ export function getSummary(trivyStatus: number): string {
             summary = 'No vulnerabilities were detected in the container image'
             break;
         case TRIVY_EXIT_CODE:
-            const vulnerabilities = getVulnerabilities();
+            const vulnerabilities = getVulnerabilities(true);
             const total = vulnerabilities.length;
             const unknownCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'UNKNOWN').length;
             const lowCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'LOW').length;
@@ -81,6 +81,25 @@ export function getSummary(trivyStatus: number): string {
     }
 
     return `- ${summary}`;
+}
+
+export function printFormattedOutput() {
+    let rows = [];
+    let titles = [TITLE_VULNERABILITY_ID, TITLE_PACKAGE_NAME, TITLE_SEVERITY, TITLE_DESCRIPTION];
+    rows.push(titles);
+
+    const vulnerabilities = getVulnerabilities();
+    vulnerabilities.forEach((cve: any) => {
+        let row = [];
+        row.push(cve[KEY_VULNERABILITY_ID]);
+        row.push(cve[KEY_PACKAGE_NAME]);
+        row.push(cve[KEY_SEVERITY]);
+        row.push(cve[KEY_DESCRIPTION]);
+        rows.push(row);
+    });
+
+    let widths = [25, 25, 25, 60];
+    console.log(table.table(rows, utils.getConfigForTable(widths)));
 }
 
 function getVulnerabilityIds(trivyStatus: number, removeDuplicates?: boolean): string[] {
@@ -140,26 +159,4 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
         default:
             throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
     }
-}
-
-export function printFormattedOutput() {
-    const trivyOutputJson = getTrivyOutput();
-    let rows = [];
-    let titles = [TITLE_VULNERABILITY_ID, TITLE_PACKAGE_NAME, TITLE_SEVERITY, TITLE_DESCRIPTION];
-    rows.push(titles);
-    trivyOutputJson.forEach(ele => {
-        if (ele && ele[KEY_VULNERABILITIES]) {
-            ele[KEY_VULNERABILITIES].forEach((cve: any) => {
-                let row = [];
-                row.push(cve[KEY_VULNERABILITY_ID]);
-                row.push(cve[KEY_PACKAGE_NAME]);
-                row.push(cve[KEY_SEVERITY]);
-                row.push(cve[KEY_DESCRIPTION]);
-                rows.push(row);
-            });
-        }
-    });
-
-    let widths = [25, 25, 25, 60];
-    console.log(table.table(rows, utils.getConfigForTable(widths)));
 }

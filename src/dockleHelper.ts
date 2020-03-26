@@ -21,6 +21,8 @@ const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
 const TITLE_TITLE = "TITLE";
 const TITLE_SEVERITY = "SEVERITY";
 const TITLE_DESCRIPTION = "DESCRIPTION";
+const LEVEL_IGNORE = "IGNORE";
+const LEVEL_INFO = "INFO";
 
 export async function getDockle(): Promise<string> {
     const latestDockleVersion = await getLatestDockleVersion();
@@ -134,14 +136,16 @@ export function printFormattedOutput() {
     let titles = [TITLE_VULNERABILITY_ID, TITLE_TITLE, TITLE_SEVERITY, TITLE_DESCRIPTION];
     rows.push(titles);
     dockleOutputJson[KEY_DETAILS].forEach(ele => {
-                let row = [];
-                row.push(ele[KEY_CODE]);
-                row.push(ele[KEY_TITLE]);
-                row.push(ele[KEY_LEVEL]);
-                row.push(ele[KEY_ALERTS][0]);
-                rows.push(row);           
+        if (ele[KEY_LEVEL] != LEVEL_IGNORE && ele[KEY_LEVEL] != LEVEL_INFO) {
+            let row = [];
+            row.push(ele[KEY_CODE]);
+            row.push(ele[KEY_TITLE]);
+            row.push(ele[KEY_LEVEL]);
+            row.push(ele[KEY_ALERTS][0]);
+            rows.push(row);
+        }
     });
-    
+
     let widths = [25, 25, 25, 60];
     console.log(table.table(rows, utils.getConfigForTable(widths)));
 }

@@ -4,12 +4,23 @@ import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 import * as fileHelper from './fileHelper';
-const semver = require('semver');
+import * as table from 'table';
+import * as semver from 'semver';
+import * as utils from './utils';
 
 export const TRIVY_EXIT_CODE = 5;
 const stableTrivyVersion = "0.5.2";
 const trivyLatestReleaseUrl = "https://api.github.com/repos/aquasecurity/trivy/releases/latest";
 const trivyToolName = "trivy";
+const KEY_VULNERABILITIES = "Vulnerabilities";
+const KEY_VULNERABILITY_ID = "VulnerabilityID";
+const KEY_PACKAGE_NAME = "PkgName";
+const KEY_SEVERITY = "Severity";
+const KEY_DESCRIPTION = "Description";
+const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
+const TITLE_PACKAGE_NAME = "PACKAGE NAME";
+const TITLE_SEVERITY = "SEVERITY";
+const TITLE_DESCRIPTION = "DESCRIPTION";
 
 export async function getTrivy(): Promise<string> {
     const latestTrivyVersion = await getLatestTrivyVersion();
@@ -19,7 +30,7 @@ export async function getTrivy(): Promise<string> {
         let trivyDownloadPath;
         const trivyDownloadUrl = getTrivyDownloadUrl(latestTrivyVersion);
         const trivyDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools/trivy`;
-        console.log(util.format("Could not find trivy in cache, downloading from %s", trivyDownloadUrl));
+        core.debug(util.format("Could not find trivy in cache, downloading from %s", trivyDownloadUrl));
 
         try {
             trivyDownloadPath = await toolCache.downloadTool(trivyDownloadUrl, trivyDownloadDir);
@@ -76,7 +87,7 @@ function getVulnerabilityIds(trivyStatus: number): string[] {
     let vulnerabilityIds: string[] = [];
     if (trivyStatus == TRIVY_EXIT_CODE) {
         const vulnerabilities = getVulnerabilities();
-        vulnerabilityIds = vulnerabilities.map(v => v['VulnerabilityID']);
+        vulnerabilityIds = vulnerabilities.map(v => v[KEY_VULNERABILITY_ID]);
     }
 
     return vulnerabilityIds;
@@ -91,8 +102,8 @@ function getVulnerabilities(): any[] {
     const trivyOutputJson = getTrivyOutput();
     let vulnerabilities: any[] = [];
     trivyOutputJson.forEach((ele: any) => {
-        if (ele && ele["Vulnerabilities"]) {
-            ele["Vulnerabilities"].forEach((cve: any) => {
+        if (ele && ele[KEY_VULNERABILITIES]) {
+            ele[KEY_VULNERABILITIES].forEach((cve: any) => {
                 vulnerabilities.push(cve);
             });
         }
@@ -127,4 +138,26 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
         default:
             throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
     }
+}
+
+export function printFormattedOutput() {
+    const trivyOutputJson = getTrivyOutput();
+    let rows = [];
+    let titles = [TITLE_VULNERABILITY_ID, TITLE_PACKAGE_NAME, TITLE_SEVERITY, TITLE_DESCRIPTION];
+    rows.push(titles);
+    trivyOutputJson.forEach(ele => {
+        if (ele && ele[KEY_VULNERABILITIES]) {
+            ele[KEY_VULNERABILITIES].forEach((cve: any) => {
+                let row = [];
+                row.push(cve[KEY_VULNERABILITY_ID]);
+                row.push(cve[KEY_PACKAGE_NAME]);
+                row.push(cve[KEY_SEVERITY]);
+                row.push(cve[KEY_DESCRIPTION]);
+                rows.push(row);
+            });
+        }
+    });
+
+    let widths = [25, 25, 25, 60];
+    console.log(table.table(rows, utils.getConfigForTable(widths)));
 }

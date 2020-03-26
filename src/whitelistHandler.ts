@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as jsyaml from 'js-yaml';
+import * as fileHelper from './fileHelper';
 
 let trivyWhitelistPath = "";
 let dockleWhitelistPath = "";
@@ -13,10 +14,7 @@ export function getTrivyWhitelist(): string {
 }
 
 function initializeTrivyWhitelistPath() {
-    let curDate = Date.now();
-    let trivyWhitelistDir = `${process.env['GITHUB_WORKSPACE']}/containerscan_${curDate}/trivy`;
-    fs.mkdirSync(trivyWhitelistDir, { recursive: true });
-    trivyWhitelistPath = trivyWhitelistDir + "/.trivyignore";
+    trivyWhitelistPath= `${fileHelper.getContainerScanDirectory()}/.trivyignore`;
 }
 
 function initializeDockleWhitelistPath() {
@@ -40,20 +38,12 @@ export function init() {
             if (whitelistYaml.general.commonVulnerabilities) {
                 trivyWhitelistExists = true;
                 const vulnArray: string[] = whitelistYaml.general.commonVulnerabilities;
-                let trivyWhitelistContent = "";
-                vulnArray.forEach(vuln => {
-                    trivyWhitelistContent += vuln;
-                    trivyWhitelistContent += "\n";
-                });
+                const trivyWhitelistContent = vulnArray.join("\n");
                 fs.writeFileSync(trivyWhitelistPath, trivyWhitelistContent);
             }
             if (whitelistYaml.general.bestPracticeVulnerabilities) {
                 const vulnArray: string[] = whitelistYaml.general.bestPracticeVulnerabilities;
-                let dockleWhitelistContent = "";
-                vulnArray.forEach(vuln => {
-                    dockleWhitelistContent += vuln;
-                    dockleWhitelistContent += "\n";
-                });
+                const dockleWhitelistContent = vulnArray.join("\n");
                 fs.writeFileSync(dockleWhitelistPath, dockleWhitelistContent);
             }
         }

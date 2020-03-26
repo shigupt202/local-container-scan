@@ -27,7 +27,7 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
     trivyEnv["TRIVY_OUTPUT"] = trivyHelper.getOutputPath();
     trivyEnv["GITHUB_TOKEN"] = inputHelper.githubToken;
 
-    if(whitelistHandler.trivyWhitelistExists)   {
+    if (whitelistHandler.trivyWhitelistExists) {
         trivyEnv["TRIVY_IGNOREFILE"] = whitelistHandler.getTrivyWhitelist();
     }
 
@@ -76,15 +76,16 @@ async function getDockleEnvVariables(): Promise<{ [key: string]: string }> {
 
 async function runTrivy(): Promise<number> {
     const trivyPath = await trivyHelper.getTrivy();
-    console.log(util.format("Trivy executable found at path ", trivyPath));
+    core.debug(util.format("Trivy executable found at path ", trivyPath));
     const trivyEnv = await getTrivyEnvVariables();
 
     const imageName = inputHelper.imageName;
     const trivyOptions: ExecOptions = {
         env: trivyEnv,
-        ignoreReturnCode: true
+        ignoreReturnCode: true,
+        silent: true
     };
-
+    console.log("Scanning for vulnerabilties...");
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
     const trivyStatus = await trivyToolRunner.exec();
     return trivyStatus;
@@ -92,14 +93,16 @@ async function runTrivy(): Promise<number> {
 
 async function runDockle(): Promise<number> {
     const docklePath = await dockleHelper.getDockle();
+    core.debug(util.format("Dockle executable found at path ", docklePath));
     const dockleEnv = await getDockleEnvVariables();
     const imageName = inputHelper.imageName;
 
     const dockleOptions: ExecOptions = {
         env: dockleEnv,
-        ignoreReturnCode: true
+        ignoreReturnCode: true,
+        silent: true
     };
-
+    console.log("Scanning for CIS and best practice violations...");
     let dockleArgs = ['-f', 'json', '-o', dockleHelper.getOutputPath(), '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName];
     const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
     const dockleStatus = await dockleToolRunner.exec();
@@ -109,9 +112,24 @@ async function runDockle(): Promise<number> {
 async function run(): Promise<void> {
     whitelistHandler.init();
     const trivyStatus = await runTrivy();
+    if (trivyStatus === trivyHelper.TRIVY_EXIT_CODE) {
+        trivyHelper.printFormattedOutput();
+    } else if (trivyStatus === 0) {
+        console.log("No vulnerabilities were detected in the container image");
+    } else {
+        throw new Error("An error occured while scanning the container image for vulnerabilities");
+    }
+    
     let dockleStatus: number;
     if (inputHelper.isCisChecksEnabled()) {
         dockleStatus = await runDockle();
+        if (dockleStatus === dockleHelper.DOCKLE_EXIT_CODE) {
+            dockleHelper.printFormattedOutput();
+        } else if (dockleStatus === 0) {
+            console.log("No best practice violations were detected in the container image");
+        } else {
+            throw new Error("An error occured while scanning the container image for best practice violations");
+        }
     }
 
     try {
@@ -122,12 +140,8 @@ async function run(): Promise<void> {
         core.warning(`An error occured while creating the check run for container scan. Error: ${error}`);
     }
 
-    if (trivyStatus == 0) {
-        console.log("No vulnerabilities were detected in the container image");
-    } else if (trivyStatus == trivyHelper.TRIVY_EXIT_CODE) {
+    if (trivyStatus == trivyHelper.TRIVY_EXIT_CODE) {
         throw new Error("Vulnerabilities were detected in the container image");
-    } else {
-        throw new Error("An error occured while scanning the container image for vulnerabilities");
     }
 }
 

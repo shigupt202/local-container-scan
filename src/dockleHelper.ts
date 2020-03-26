@@ -4,13 +4,23 @@ import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 import * as fileHelper from './fileHelper';
-import * as inputHelper from './inputHelper';
-const semver = require('semver');
+import * as table from 'table';
+import * as semver from 'semver';
+import * as utils from './utils';
 
 export const DOCKLE_EXIT_CODE = 5;
 const stableDockleVersion = "0.2.4";
 const dockleLatestReleaseUrl = "https://api.github.com/repos/goodwithtech/dockle/releases/latest";
 const dockleToolName = "dockle";
+const KEY_DETAILS = "details";
+const KEY_CODE = "code";
+const KEY_TITLE = "title";
+const KEY_LEVEL = "level";
+const KEY_ALERTS = "alerts";
+const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
+const TITLE_TITLE = "TITLE";
+const TITLE_SEVERITY = "SEVERITY";
+const TITLE_DESCRIPTION = "DESCRIPTION";
 
 export async function getDockle(): Promise<string> {
     const latestDockleVersion = await getLatestDockleVersion();
@@ -19,7 +29,7 @@ export async function getDockle(): Promise<string> {
         let dockleDownloadPath;
         const dockleDownloadUrl = getDockleDownloadUrl(latestDockleVersion);
         const dockleDownloadDir = `${process.env['GITHUB_WORKSPACE']}/_temp/tools/dockle`;
-        console.log(util.format("Could not find dockle in cache, downloading from %s", dockleDownloadUrl));
+        core.debug(util.format("Could not find dockle in cache, downloading from %s", dockleDownloadUrl));
 
         try {
             dockleDownloadPath = await toolCache.downloadTool(dockleDownloadUrl, dockleDownloadDir);
@@ -116,4 +126,22 @@ function getDockleDownloadUrl(dockleVersion: string): string {
         default:
             throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
     }
+}
+
+export function printFormattedOutput() {
+    const dockleOutputJson = getDockleOutput();
+    let rows = [];
+    let titles = [TITLE_VULNERABILITY_ID, TITLE_TITLE, TITLE_SEVERITY, TITLE_DESCRIPTION];
+    rows.push(titles);
+    dockleOutputJson[KEY_DETAILS].forEach(ele => {
+                let row = [];
+                row.push(ele[KEY_CODE]);
+                row.push(ele[KEY_TITLE]);
+                row.push(ele[KEY_LEVEL]);
+                row.push(ele[KEY_ALERTS][0]);
+                rows.push(row);           
+    });
+    
+    let widths = [25, 25, 25, 60];
+    console.log(table.table(rows, utils.getConfigForTable(widths)));
 }

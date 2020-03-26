@@ -23,7 +23,7 @@ export class GitHubClient {
             throw Error(`Statuscode: ${response.statusCode}, StatusMessage: ${response.statusMessage}, Url: ${checkRunUrl}, head_sha: ${payload['head_sha']}`);
         }
 
-        console.log(`Created check run. Id: ${response.body['id']}, Url: ${response.body['html_url']}`)
+        console.log(`Created check run. Url: ${response.body['html_url']}`)
     }
 
     private _repository: string;

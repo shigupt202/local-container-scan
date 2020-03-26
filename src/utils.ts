@@ -11,7 +11,7 @@ export function getCheckRunPayloadWithScanResult(trivyStatus: number, dockleStat
 
     const checkRunPayload = {
         head_sha: headSha,
-        name: inputHelper.imageName,
+        name: `[container-scan] ${inputHelper.imageName}`,
         status: "completed",
         conclusion: checkConclusion,
         output: {
@@ -30,7 +30,7 @@ function getCheckConclusion(trivyStatus: number, dockleStatus: number): string {
 }
 
 function getCheckSummary(trivyStatus: number, dockleStatus: number): string {
-    const header: string = `Container scan report for \`${inputHelper.imageName}\`-`;
+    const header: string = `Scanned image \`${inputHelper.imageName}\`-`;
     const trivySummary = trivyHelper.getSummary(trivyStatus);
     let summary = `${header}\n\n${trivySummary}`;
 

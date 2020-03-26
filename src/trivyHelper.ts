@@ -54,8 +54,8 @@ export function getOutputPath(): string {
 }
 
 export function getText(trivyStatus: number): string {
-    const vulnerabilityIds = getVulnerabilityIds(trivyStatus);
-    return `**Common Vulnerabilities** -\n${vulnerabilityIds.join('\n')}`;
+    const vulnerabilityIds = getVulnerabilityIds(trivyStatus, true);
+    return `**Vulnerabilities** -\n${vulnerabilityIds.length > 0 ? vulnerabilityIds.join('\n') : 'None found.'}`;
 }
 
 export function getSummary(trivyStatus: number): string {
@@ -83,10 +83,10 @@ export function getSummary(trivyStatus: number): string {
     return `- ${summary}`;
 }
 
-function getVulnerabilityIds(trivyStatus: number): string[] {
+function getVulnerabilityIds(trivyStatus: number, removeDuplicates?: boolean): string[] {
     let vulnerabilityIds: string[] = [];
     if (trivyStatus == TRIVY_EXIT_CODE) {
-        const vulnerabilities = getVulnerabilities();
+        const vulnerabilities = getVulnerabilities(removeDuplicates);
         vulnerabilityIds = vulnerabilities.map(v => v[KEY_VULNERABILITY_ID]);
     }
 
@@ -98,13 +98,15 @@ function getTrivyOutput(): any {
     return fileHelper.getFileJson(path);
 }
 
-function getVulnerabilities(): any[] {
+function getVulnerabilities(removeDuplicates?: boolean): any[] {
     const trivyOutputJson = getTrivyOutput();
     let vulnerabilities: any[] = [];
     trivyOutputJson.forEach((ele: any) => {
         if (ele && ele[KEY_VULNERABILITIES]) {
             ele[KEY_VULNERABILITIES].forEach((cve: any) => {
-                vulnerabilities.push(cve);
+                if (!removeDuplicates || !vulnerabilities.some(v => v[KEY_VULNERABILITY_ID] === cve[KEY_VULNERABILITY_ID])) {
+                    vulnerabilities.push(cve);
+                }
             });
         }
     });

@@ -73,14 +73,16 @@ export function getSummary(dockleStatus: number): string {
 
 export function getText(dockleStatus: number): string {
     const cisIds = getCisIds(dockleStatus);
-    return `**Best Practices Violations** -\n${cisIds.join('\n')}`;
+    return `**Best Practices Violations** -\n${cisIds.length > 0 ? cisIds.join('\n') : 'None found.'}`;
 }
 
 function getCisIds(dockleStatus: number): string[] {
     let cisIds: string[] = [];
     if (dockleStatus === DOCKLE_EXIT_CODE) {
         const dockleOutputJson = getDockleOutput();
-        cisIds = dockleOutputJson['details'].map(dd => dd['code']);
+        cisIds = dockleOutputJson['details']
+            .filter(isUnignored)
+            .map(dd => dd['code']);
     }
 
     return cisIds;
@@ -93,10 +95,12 @@ function getDockleOutput(): any {
 
 function getCisSummary(): any {
     const dockleOutputJson = getDockleOutput();
-    let cisSummary = '';
+    let cisSummary = 'Best practices test summary -';
     const dockleSummary = dockleOutputJson['summary'];
     if (dockleSummary) {
-        cisSummary = `Best practices test summary -\n"fatal": ${dockleSummary["fatal"]}\n"warn": ${dockleSummary["warn"]}\n"info": ${dockleSummary["info"]}\n"pass": ${dockleSummary["pass"]}`;
+        for (let level in dockleSummary) {
+            cisSummary = `${cisSummary}\n${level.toUpperCase()}: ${dockleSummary[level]}`;
+        }
     }
 
     return cisSummary;
@@ -148,4 +152,8 @@ export function printFormattedOutput() {
 
     let widths = [25, 25, 25, 60];
     console.log(table.table(rows, utils.getConfigForTable(widths)));
+}
+
+let isUnignored = (cisDetail: any): boolean => {
+    return cisDetail['level'].toUpperCase() !== 'IGNORE';
 }

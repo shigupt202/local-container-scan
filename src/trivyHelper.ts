@@ -17,6 +17,11 @@ const KEY_VULNERABILITY_ID = "VulnerabilityID";
 const KEY_PACKAGE_NAME = "PkgName";
 const KEY_SEVERITY = "Severity";
 const KEY_DESCRIPTION = "Description";
+const SEVERITY_CRITICAL = "CRITICAL";
+const SEVERITY_HIGH = "HIGH";
+const SEVERITY_MEDIUM = "MEDIUM";
+const SEVERITY_LOW = "LOW";
+const SEVERITY_UNKNOWN = "UNKNOWN";
 const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
 const TITLE_PACKAGE_NAME = "PACKAGE NAME";
 const TITLE_SEVERITY = "SEVERITY";
@@ -54,8 +59,15 @@ export function getOutputPath(): string {
 }
 
 export function getText(trivyStatus: number): string {
-    const vulnerabilityIds = getVulnerabilityIds(trivyStatus, true);
-    return `**Vulnerabilities** -\n${vulnerabilityIds.length > 0 ? vulnerabilityIds.join('\n') : 'None found.'}`;
+    let clusteredVulnerabilities = '';
+    const vulnerabilityIdsBySeverity = getVulnerabilityIdsBySeverity(trivyStatus, true);
+    for (let severity in vulnerabilityIdsBySeverity) {
+        if (vulnerabilityIdsBySeverity[severity].length > 0) {
+            clusteredVulnerabilities = `${clusteredVulnerabilities}\n- ${severity}:\n${vulnerabilityIdsBySeverity[severity].join('\n')}`;
+        }
+    }
+
+    return `**Vulnerabilities** -${clusteredVulnerabilities ? clusteredVulnerabilities : '\nNone found.'}`;
 }
 
 export function getSummary(trivyStatus: number): string {
@@ -65,15 +77,16 @@ export function getSummary(trivyStatus: number): string {
             summary = 'No vulnerabilities were detected in the container image'
             break;
         case TRIVY_EXIT_CODE:
-            const vulnerabilities = getVulnerabilities(true);
-            const total = vulnerabilities.length;
-            const unknownCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'UNKNOWN').length;
-            const lowCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'LOW').length;
-            const mediumCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'MEDIUM').length;
-            const highCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'HIGH').length;
-            const criticalCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'CRITICAL').length;
+            let summaryDetails = '';
+            let total = 0;
+            const vulnerabilityIdsBySeverity = getVulnerabilityIdsBySeverity(trivyStatus, true);
+            for (let severity in vulnerabilityIdsBySeverity) {
+                let severityCount = vulnerabilityIdsBySeverity[severity].length;
+                total += severityCount;
+                summaryDetails = `${summaryDetails}\n${severity}: ${severityCount}`;
+            }
 
-            summary = `Found ${total} vulnerabilities -\nUNKNOWN: ${unknownCount}\nLOW: ${lowCount}\nMEDIUM: ${mediumCount}\nHIGH: ${highCount}\nCRITICAL: ${criticalCount}`;
+            summary = `Found ${total} vulnerabilities -${summaryDetails}`;
             break;
         default:
             summary = 'An error occured while scanning the container image for vulnerabilities';
@@ -98,18 +111,24 @@ export function printFormattedOutput() {
         rows.push(row);
     });
 
-    let widths = [25, 25, 25, 60];
+    let widths = [25, 20, 15, 60];
     console.log(table.table(rows, utils.getConfigForTable(widths)));
 }
 
-function getVulnerabilityIds(trivyStatus: number, removeDuplicates?: boolean): string[] {
-    let vulnerabilityIds: string[] = [];
+function getVulnerabilityIdsBySeverity(trivyStatus: number, removeDuplicates?: boolean): any {
+    const severities: string[] = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW, SEVERITY_UNKNOWN];
+    let vulnerabilityIdsBySeverity: any = {};
+
     if (trivyStatus == TRIVY_EXIT_CODE) {
         const vulnerabilities = getVulnerabilities(removeDuplicates);
-        vulnerabilityIds = vulnerabilities.map(v => v[KEY_VULNERABILITY_ID]);
+        for (let severity in severities) {
+            vulnerabilityIdsBySeverity[severity] = vulnerabilities
+                .filter(v => v[KEY_SEVERITY].toUpperCase() === severity)
+                .map(v => v[KEY_VULNERABILITY_ID]);
+        }
     }
 
-    return vulnerabilityIds;
+    return vulnerabilityIdsBySeverity;
 }
 
 function getTrivyOutput(): any {

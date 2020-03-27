@@ -3,9 +3,11 @@ import * as util from 'util';
 import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
-import * as fileHelper from './fileHelper';
 import * as table from 'table';
 import * as semver from 'semver';
+import * as fileHelper from './fileHelper';
+import * as inputHelper from './inputHelper';
+import * as tableHelper from './tableHelper';
 import * as utils from './utils';
 
 export const TRIVY_EXIT_CODE = 5;
@@ -22,6 +24,7 @@ const SEVERITY_HIGH = "HIGH";
 const SEVERITY_MEDIUM = "MEDIUM";
 const SEVERITY_LOW = "LOW";
 const SEVERITY_UNKNOWN = "UNKNOWN";
+const TITLE_COUNT = "COUNT";
 const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
 const TITLE_PACKAGE_NAME = "PACKAGE NAME";
 const TITLE_SEVERITY = "SEVERITY";
@@ -63,7 +66,7 @@ export function getText(trivyStatus: number): string {
     const vulnerabilityIdsBySeverity = getVulnerabilityIdsBySeverity(trivyStatus, true);
     for (let severity in vulnerabilityIdsBySeverity) {
         if (vulnerabilityIdsBySeverity[severity].length > 0) {
-            clusteredVulnerabilities = `${clusteredVulnerabilities}\n- ${severity}:\n${vulnerabilityIdsBySeverity[severity].join('\n')}`;
+            clusteredVulnerabilities = `${clusteredVulnerabilities}\n- **${severity}**:\n${vulnerabilityIdsBySeverity[severity].join('\n')}`;
         }
     }
 
@@ -77,16 +80,26 @@ export function getSummary(trivyStatus: number): string {
             summary = 'No vulnerabilities were detected in the container image'
             break;
         case TRIVY_EXIT_CODE:
-            let summaryDetails = '';
+            let summaryRows: string[] = [];
             let total = 0;
             const vulnerabilityIdsBySeverity = getVulnerabilityIdsBySeverity(trivyStatus, true);
             for (let severity in vulnerabilityIdsBySeverity) {
-                let severityCount = vulnerabilityIdsBySeverity[severity].length;
+                const severityCount = vulnerabilityIdsBySeverity[severity].length;
+                const isBold = severityCount > 0;
+                summaryRows.push(tableHelper.getTableRow([severity, severityCount], isBold));
                 total += severityCount;
-                summaryDetails = `${summaryDetails}\n${severity}: ${severityCount}`;
             }
 
-            summary = `Found ${total} vulnerabilities -${summaryDetails}`;
+            // Sample table:
+            //
+            // SEVERITY|COUNT
+            // ---|---
+            // **CRITICAL**|**3**
+            // HIGH|2
+            // **MEDIUM**|**1**
+
+            const summaryTable = `${tableHelper.getTableHeader([TITLE_SEVERITY, TITLE_COUNT])}\n${summaryRows.join('\n')}`;
+            summary = `Found ${total} vulnerabilities -\n${summaryTable}`;
             break;
         default:
             summary = 'An error occured while scanning the container image for vulnerabilities';
@@ -115,8 +128,44 @@ export function printFormattedOutput() {
     console.log(table.table(rows, utils.getConfigForTable(widths)));
 }
 
+export function getSeveritiesToInclude(warnIfInvalid?: boolean): string[] {
+    let severities: string[] = [];
+    const severityThreshold = inputHelper.severityThreshold;
+    if (severityThreshold) {
+        switch (severityThreshold.toUpperCase()) {
+            case SEVERITY_UNKNOWN:
+                severities = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW, SEVERITY_UNKNOWN];
+                break;
+            case SEVERITY_LOW:
+                severities = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW];
+                break;
+            case SEVERITY_MEDIUM:
+                severities = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM];
+                break;
+            case SEVERITY_HIGH:
+                severities = [SEVERITY_CRITICAL, SEVERITY_HIGH];
+                break;
+            case SEVERITY_CRITICAL:
+                severities = [SEVERITY_CRITICAL];
+                break;
+            default:
+                if (warnIfInvalid) {
+                    core.warning("Invalid severity-threshold. Showing all the vulnerabilities.");
+                }
+                severities = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW, SEVERITY_UNKNOWN];
+        }
+    } else {
+        if (warnIfInvalid) {
+            core.warning("No severity-threshold provided. Showing all the vulnerabilities.");
+        }
+        severities = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW, SEVERITY_UNKNOWN];
+    }
+
+    return severities;
+}
+
 function getVulnerabilityIdsBySeverity(trivyStatus: number, removeDuplicates?: boolean): any {
-    const severities: string[] = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW, SEVERITY_UNKNOWN];
+    const severities = getSeveritiesToInclude();
     let vulnerabilityIdsBySeverity: any = {};
 
     if (trivyStatus == TRIVY_EXIT_CODE) {

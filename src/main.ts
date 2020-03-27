@@ -70,7 +70,9 @@ async function runTrivy(): Promise<number> {
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
     const trivyStatus = await trivyToolRunner.exec();
     const err = fs.readFileSync(trivyHelper.getTrivyErrorPath(), 'utf8');
-    console.log(err);
+    const out = fs.readFileSync(trivyHelper.getTrivyLogPath(), 'utf8');
+    console.log("Error: " + err);
+    console.log("Log: " + out);
     return trivyStatus;
 }
 

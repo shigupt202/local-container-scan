@@ -6,7 +6,6 @@ import * as core from '@actions/core';
 import * as table from 'table';
 import * as semver from 'semver';
 import * as fileHelper from './fileHelper';
-import * as tableHelper from './tableHelper';
 import * as utils from './utils';
 
 export const DOCKLE_EXIT_CODE = 5;
@@ -119,17 +118,15 @@ function getCisSummary(): any {
     const dockleSummary = dockleOutputJson['summary'];
     const includedLevels = getLevelsToInclude();
     if (dockleSummary) {
-        let summaryRows: string[] = [];
         for (let level in dockleSummary) {
-            if(includedLevels.includes(level.toUpperCase())) {
+            if (includedLevels.includes(level.toUpperCase())) {
                 const levelCount = dockleSummary[level];
                 const isBold = levelCount > 0;
-                summaryRows.push(tableHelper.getTableRow([level.toUpperCase(), levelCount], isBold));
+                cisSummary = isBold
+                    ? `${cisSummary}\n**${level.toUpperCase()}**: **${dockleSummary[level]}**`
+                    : `${cisSummary}\n${level.toUpperCase()}: ${dockleSummary[level]}`;
             }
         }
-
-        const summaryTable = `${tableHelper.getTableHeader([TITLE_LEVEL, TITLE_COUNT])}\n${summaryRows.join('\n')}`;
-        cisSummary = `${cisSummary}\n${summaryTable}`;
     }
 
     return cisSummary;

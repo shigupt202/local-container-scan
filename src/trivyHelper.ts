@@ -7,7 +7,6 @@ import * as table from 'table';
 import * as semver from 'semver';
 import * as fileHelper from './fileHelper';
 import * as inputHelper from './inputHelper';
-import * as tableHelper from './tableHelper';
 import * as utils from './utils';
 
 export const TRIVY_EXIT_CODE = 5;
@@ -80,26 +79,20 @@ export function getSummary(trivyStatus: number): string {
             summary = 'No vulnerabilities were detected in the container image'
             break;
         case TRIVY_EXIT_CODE:
-            let summaryRows: string[] = [];
+            let summaryDetails = '';
             let total = 0;
             const vulnerabilityIdsBySeverity = getVulnerabilityIdsBySeverity(trivyStatus, true);
             for (let severity in vulnerabilityIdsBySeverity) {
                 const severityCount = vulnerabilityIdsBySeverity[severity].length;
                 const isBold = severityCount > 0;
-                summaryRows.push(tableHelper.getTableRow([severity, severityCount], isBold));
+                summaryDetails = isBold
+                    ? `${summaryDetails}\n**${severity}**: **${severityCount}**`
+                    : summaryDetails = `${summaryDetails}\n${severity}: ${severityCount}`;
+
                 total += severityCount;
             }
 
-            // Sample table:
-            //
-            // SEVERITY|COUNT
-            // ---|---
-            // **CRITICAL**|**3**
-            // HIGH|2
-            // **MEDIUM**|**1**
-
-            const summaryTable = `${tableHelper.getTableHeader([TITLE_SEVERITY, TITLE_COUNT])}\n${summaryRows.join('\n')}`;
-            summary = `Found ${total} vulnerabilities -\n${summaryTable}`;
+            summary = `Found ${total} vulnerabilities -${summaryDetails}`;
             break;
         default:
             summary = 'An error occured while scanning the container image for vulnerabilities';

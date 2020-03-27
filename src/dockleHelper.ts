@@ -59,6 +59,11 @@ export function getOutputPath(): string {
     return dockleOutputPath;
 }
 
+export function getDockleLogPath(): string {
+    const dockleLogPath = `${fileHelper.getContainerScanDirectory()}/tdocklelog`;
+    return dockleLogPath;
+}
+
 export function getSummary(dockleStatus: number): string {
     let summary = '';
     switch (dockleStatus) {

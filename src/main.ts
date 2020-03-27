@@ -97,7 +97,7 @@ async function run(): Promise<void> {
     } else if (trivyStatus === 0) {
         console.log("No vulnerabilities were detected in the container image");
     } else {
-        throw new Error("An error occured while scanning the container image for vulnerabilities");
+        throw new Error("An error occured while scanning the container image for vulnerabilities. Error: " + process.stderr);
     }
 
     let dockleStatus: number;
@@ -108,7 +108,7 @@ async function run(): Promise<void> {
         } else if (dockleStatus === 0) {
             console.log("No best practice violations were detected in the container image");
         } else {
-            throw new Error("An error occured while scanning the container image for best practice violations");
+            throw new Error("An error occured while scanning the container image for best practice violations. Error: " + process.stderr);
         }
     }
 

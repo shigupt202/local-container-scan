@@ -63,11 +63,13 @@ async function runTrivy(): Promise<number> {
     const trivyOptions: ExecOptions = {
         env: trivyEnv,
         ignoreReturnCode: true,
-        outStream: fs.createWriteStream(trivyHelper.getTrivyLogPath())
+        outStream: fs.createWriteStream(trivyHelper.getTrivyLogPath()),
+        errStream: fs.createWriteStream(trivyHelper.getTrivyErrorPath())
     };
     console.log("Scanning for vulnerabilties...");
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
     const trivyStatus = await trivyToolRunner.exec();
+    console.log(fs.readFileSync(trivyHelper.getTrivyErrorPath()));
     return trivyStatus;
 }
 

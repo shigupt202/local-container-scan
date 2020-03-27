@@ -99,7 +99,7 @@ async function run(): Promise<void> {
     } else if (trivyStatus === 0) {
         console.log("No vulnerabilities were detected in the container image");
     } else {
-        //throw new Error("An error occured while scanning the container image for vulnerabilities");
+        throw new Error("An error occured while scanning the container image for vulnerabilities");
     }
 
     let dockleStatus: number;

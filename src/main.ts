@@ -71,7 +71,6 @@ async function runTrivy(): Promise<number> {
     const trivyStatus = await trivyToolRunner.exec();
     const err = fs.readFileSync(trivyHelper.getTrivyErrorPath(), 'utf8');
     const out = fs.readFileSync(trivyHelper.getTrivyLogPath(), 'utf8');
-    console.log("Error: " + err);
     console.log("Log: " + out);
     return trivyStatus;
 }

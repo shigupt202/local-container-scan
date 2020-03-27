@@ -63,8 +63,7 @@ async function runTrivy(): Promise<number> {
     const trivyOptions: ExecOptions = {
         env: trivyEnv,
         ignoreReturnCode: true,
-        outStream: fs.createWriteStream(trivyHelper.getTrivyLogPath()),
-        errStream: fs.createWriteStream(trivyHelper.getTrivyErrorPath())
+        outStream: fs.createWriteStream(trivyHelper.getTrivyLogPath())
     };
     console.log("Scanning for vulnerabilties...");
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
@@ -104,7 +103,7 @@ async function run(): Promise<void> {
     } else if (trivyStatus === 0) {
         console.log("No vulnerabilities were detected in the container image");
     } else {
-        throw new Error("An error occured while scanning the container image for vulnerabilities. Error: " + process.stderr);
+        //throw new Error("An error occured while scanning the container image for vulnerabilities. Error: " + process.stderr);
     }
 
     let dockleStatus: number;

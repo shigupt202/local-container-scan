@@ -92,6 +92,12 @@ async function runDockle(): Promise<number> {
     let dockleArgs = ['-f', 'json', '-o', dockleHelper.getOutputPath(), '--exit-level', dockleHelper.LEVEL_INFO, '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName];
     const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
     const dockleStatus = await dockleToolRunner.exec();
+    const out = fs.readFileSync(dockleHelper.getDockleLogPath(), 'utf8');
+    const errIndex = out.lastIndexOf("FATAL");
+    if(errIndex >= 0) {
+        const err = out.substring(errIndex);
+        console.log(err);
+    }
     return dockleStatus;
 }
 
@@ -103,7 +109,7 @@ async function run(): Promise<void> {
     } else if (trivyStatus === 0) {
         console.log("No vulnerabilities were detected in the container image");
     } else {
-        //throw new Error("An error occured while scanning the container image for vulnerabilities. Error: " + process.stderr);
+        //throw new Error("An error occured while scanning the container image for vulnerabilities");
     }
 
     let dockleStatus: number;
@@ -114,7 +120,7 @@ async function run(): Promise<void> {
         } else if (dockleStatus === 0) {
             console.log("No best practice violations were detected in the container image");
         } else {
-            throw new Error("An error occured while scanning the container image for best practice violations. Error: " + process.stderr);
+            throw new Error("An error occured while scanning the container image for best practice violations");
         }
     }
 

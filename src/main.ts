@@ -70,7 +70,7 @@ async function runTrivy(): Promise<number> {
     const trivyStatus = await trivyToolRunner.exec();
     const out = fs.readFileSync(trivyHelper.getTrivyLogPath(), 'utf8');
     const errIndex = out.lastIndexOf("FATAL");
-    if(errIndex >= 0) {
+    if (errIndex >= 0) {
         const err = out.substring(errIndex);
         console.log(err);
     }
@@ -94,10 +94,11 @@ async function runDockle(): Promise<number> {
     const dockleStatus = await dockleToolRunner.exec();
     const out = fs.readFileSync(dockleHelper.getDockleLogPath(), 'utf8');
     const errIndex = out.lastIndexOf("FATAL");
-    if(errIndex >= 0) {
+    if (errIndex >= 0) {
         const err = out.substring(errIndex);
         console.log(err);
     }
+    console.log("out: " + out);
     return dockleStatus;
 }
 

@@ -87,6 +87,6 @@ export function checkForErrors(outputPath: string) {
   const errIndex = out.lastIndexOf("FATAL");
   if (errIndex >= 0) {
     const err = out.substring(errIndex);
-    core.debug(err);
+    core.warning(err);
   }
 }

@@ -83,7 +83,6 @@ export function getConfigForTable(widths: number[]): any {
 }
 
 export function checkForErrors(outputPath: string) {
-  console.log("outpath: " + outputPath);
   const out = fs.readFileSync(outputPath, 'utf8');
   const errIndex = out.lastIndexOf("FATAL");
   if (errIndex >= 0) {

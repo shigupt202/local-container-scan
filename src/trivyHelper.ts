@@ -3,9 +3,10 @@ import * as util from 'util';
 import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
-import * as fileHelper from './fileHelper';
 import * as table from 'table';
 import * as semver from 'semver';
+import * as fileHelper from './fileHelper';
+import * as inputHelper from './inputHelper';
 import * as utils from './utils';
 
 export const TRIVY_EXIT_CODE = 5;
@@ -17,6 +18,12 @@ const KEY_VULNERABILITY_ID = "VulnerabilityID";
 const KEY_PACKAGE_NAME = "PkgName";
 const KEY_SEVERITY = "Severity";
 const KEY_DESCRIPTION = "Description";
+const SEVERITY_CRITICAL = "CRITICAL";
+const SEVERITY_HIGH = "HIGH";
+const SEVERITY_MEDIUM = "MEDIUM";
+const SEVERITY_LOW = "LOW";
+const SEVERITY_UNKNOWN = "UNKNOWN";
+const TITLE_COUNT = "COUNT";
 const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
 const TITLE_PACKAGE_NAME = "PACKAGE NAME";
 const TITLE_SEVERITY = "SEVERITY";
@@ -54,8 +61,15 @@ export function getOutputPath(): string {
 }
 
 export function getText(trivyStatus: number): string {
-    const vulnerabilityIds = getVulnerabilityIds(trivyStatus);
-    return `**Common Vulnerabilities** -\n${vulnerabilityIds.join('\n')}`;
+    let clusteredVulnerabilities = '';
+    const vulnerabilityIdsBySeverity = getVulnerabilityIdsBySeverity(trivyStatus, true);
+    for (let severity in vulnerabilityIdsBySeverity) {
+        if (vulnerabilityIdsBySeverity[severity].length > 0) {
+            clusteredVulnerabilities = `${clusteredVulnerabilities}\n- **${severity}**:\n${vulnerabilityIdsBySeverity[severity].join('\n')}`;
+        }
+    }
+
+    return `**Vulnerabilities** -${clusteredVulnerabilities ? clusteredVulnerabilities : '\nNone found.'}`;
 }
 
 export function getSummary(trivyStatus: number): string {
@@ -65,15 +79,20 @@ export function getSummary(trivyStatus: number): string {
             summary = 'No vulnerabilities were detected in the container image'
             break;
         case TRIVY_EXIT_CODE:
-            const vulnerabilities = getVulnerabilities();
-            const total = vulnerabilities.length;
-            const unknownCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'UNKNOWN').length;
-            const lowCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'LOW').length;
-            const mediumCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'MEDIUM').length;
-            const highCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'HIGH').length;
-            const criticalCount = vulnerabilities.filter(v => v['Severity'].toUpperCase() === 'CRITICAL').length;
+            let summaryDetails = '';
+            let total = 0;
+            const vulnerabilityIdsBySeverity = getVulnerabilityIdsBySeverity(trivyStatus, true);
+            for (let severity in vulnerabilityIdsBySeverity) {
+                const severityCount = vulnerabilityIdsBySeverity[severity].length;
+                const isBold = severityCount > 0;
+                summaryDetails = isBold
+                    ? `${summaryDetails}\n**${severity}**: **${severityCount}**`
+                    : summaryDetails = `${summaryDetails}\n${severity}: ${severityCount}`;
 
-            summary = `Found ${total} vulnerabilities -\nUNKNOWN: ${unknownCount}\nLOW: ${lowCount}\nMEDIUM: ${mediumCount}\nHIGH: ${highCount}\nCRITICAL: ${criticalCount}`;
+                total += severityCount;
+            }
+
+            summary = `Found ${total} vulnerabilities -${summaryDetails}`;
             break;
         default:
             summary = 'An error occured while scanning the container image for vulnerabilities';
@@ -83,14 +102,75 @@ export function getSummary(trivyStatus: number): string {
     return `- ${summary}`;
 }
 
-function getVulnerabilityIds(trivyStatus: number): string[] {
-    let vulnerabilityIds: string[] = [];
-    if (trivyStatus == TRIVY_EXIT_CODE) {
-        const vulnerabilities = getVulnerabilities();
-        vulnerabilityIds = vulnerabilities.map(v => v[KEY_VULNERABILITY_ID]);
+export function printFormattedOutput() {
+    let rows = [];
+    let titles = [TITLE_VULNERABILITY_ID, TITLE_PACKAGE_NAME, TITLE_SEVERITY, TITLE_DESCRIPTION];
+    rows.push(titles);
+
+    const vulnerabilities = getVulnerabilities();
+    vulnerabilities.forEach((cve: any) => {
+        let row = [];
+        row.push(cve[KEY_VULNERABILITY_ID]);
+        row.push(cve[KEY_PACKAGE_NAME]);
+        row.push(cve[KEY_SEVERITY]);
+        row.push(cve[KEY_DESCRIPTION]);
+        rows.push(row);
+    });
+
+    let widths = [25, 20, 15, 60];
+    console.log(table.table(rows, utils.getConfigForTable(widths)));
+}
+
+export function getSeveritiesToInclude(warnIfInvalid?: boolean): string[] {
+    let severities: string[] = [];
+    const severityThreshold = inputHelper.severityThreshold;
+    if (severityThreshold) {
+        switch (severityThreshold.toUpperCase()) {
+            case SEVERITY_UNKNOWN:
+                severities = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW, SEVERITY_UNKNOWN];
+                break;
+            case SEVERITY_LOW:
+                severities = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW];
+                break;
+            case SEVERITY_MEDIUM:
+                severities = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM];
+                break;
+            case SEVERITY_HIGH:
+                severities = [SEVERITY_CRITICAL, SEVERITY_HIGH];
+                break;
+            case SEVERITY_CRITICAL:
+                severities = [SEVERITY_CRITICAL];
+                break;
+            default:
+                if (warnIfInvalid) {
+                    core.warning("Invalid severity-threshold. Showing all the vulnerabilities.");
+                }
+                severities = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW, SEVERITY_UNKNOWN];
+        }
+    } else {
+        if (warnIfInvalid) {
+            core.warning("No severity-threshold provided. Showing all the vulnerabilities.");
+        }
+        severities = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW, SEVERITY_UNKNOWN];
     }
 
-    return vulnerabilityIds;
+    return severities;
+}
+
+function getVulnerabilityIdsBySeverity(trivyStatus: number, removeDuplicates?: boolean): any {
+    const severities = getSeveritiesToInclude();
+    let vulnerabilityIdsBySeverity: any = {};
+
+    if (trivyStatus == TRIVY_EXIT_CODE) {
+        const vulnerabilities = getVulnerabilities(removeDuplicates);
+        for (let severity of severities) {
+            vulnerabilityIdsBySeverity[severity] = vulnerabilities
+                .filter(v => v[KEY_SEVERITY].toUpperCase() === severity)
+                .map(v => v[KEY_VULNERABILITY_ID]);
+        }
+    }
+
+    return vulnerabilityIdsBySeverity;
 }
 
 function getTrivyOutput(): any {
@@ -98,13 +178,15 @@ function getTrivyOutput(): any {
     return fileHelper.getFileJson(path);
 }
 
-function getVulnerabilities(): any[] {
+function getVulnerabilities(removeDuplicates?: boolean): any[] {
     const trivyOutputJson = getTrivyOutput();
     let vulnerabilities: any[] = [];
     trivyOutputJson.forEach((ele: any) => {
         if (ele && ele[KEY_VULNERABILITIES]) {
             ele[KEY_VULNERABILITIES].forEach((cve: any) => {
-                vulnerabilities.push(cve);
+                if (!removeDuplicates || !vulnerabilities.some(v => v[KEY_VULNERABILITY_ID] === cve[KEY_VULNERABILITY_ID])) {
+                    vulnerabilities.push(cve);
+                }
             });
         }
     });
@@ -138,26 +220,4 @@ function getTrivyDownloadUrl(trivyVersion: string): string {
         default:
             throw new Error(util.format("Container scanning is not supported on %s currently", curOS));
     }
-}
-
-export function printFormattedOutput() {
-    const trivyOutputJson = getTrivyOutput();
-    let rows = [];
-    let titles = [TITLE_VULNERABILITY_ID, TITLE_PACKAGE_NAME, TITLE_SEVERITY, TITLE_DESCRIPTION];
-    rows.push(titles);
-    trivyOutputJson.forEach(ele => {
-        if (ele && ele[KEY_VULNERABILITIES]) {
-            ele[KEY_VULNERABILITIES].forEach((cve: any) => {
-                let row = [];
-                row.push(cve[KEY_VULNERABILITY_ID]);
-                row.push(cve[KEY_PACKAGE_NAME]);
-                row.push(cve[KEY_SEVERITY]);
-                row.push(cve[KEY_DESCRIPTION]);
-                rows.push(row);
-            });
-        }
-    });
-
-    let widths = [25, 25, 25, 60];
-    console.log(table.table(rows, utils.getConfigForTable(widths)));
 }

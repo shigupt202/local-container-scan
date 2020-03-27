@@ -31,29 +31,8 @@ async function getTrivyEnvVariables(): Promise<{ [key: string]: string }> {
         trivyEnv["TRIVY_IGNOREFILE"] = whitelistHandler.getTrivyWhitelist();
     }
 
-    const severityThreshold = inputHelper.severityThreshold;
-    if (severityThreshold) {
-        switch (severityThreshold.toUpperCase()) {
-            case 'UNKNOWN':
-                trivyEnv["TRIVY_SEVERITY"] = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL";
-                break;
-            case 'LOW':
-                trivyEnv["TRIVY_SEVERITY"] = "LOW,MEDIUM,HIGH,CRITICAL";
-                break;
-            case 'MEDIUM':
-                trivyEnv["TRIVY_SEVERITY"] = "MEDIUM,HIGH,CRITICAL";
-                break;
-            case 'HIGH':
-                trivyEnv["TRIVY_SEVERITY"] = "HIGH,CRITICAL";
-                break;
-            case 'CRITICAL':
-                trivyEnv["TRIVY_SEVERITY"] = "CRITICAL";
-                break;
-            default:
-                core.warning("Invalid severity-threshold. Showing all the vulnerabilities.");
-                trivyEnv["TRIVY_SEVERITY"] = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL";
-        }
-    }
+    const severities = trivyHelper.getSeveritiesToInclude(true);
+    trivyEnv["TRIVY_SEVERITY"] = severities.join(',');
 
     return trivyEnv;
 }
@@ -103,7 +82,7 @@ async function runDockle(): Promise<number> {
         silent: true
     };
     console.log("Scanning for CIS and best practice violations...");
-    let dockleArgs = ['-f', 'json', '-o', dockleHelper.getOutputPath(), '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName];
+    let dockleArgs = ['-f', 'json', '-o', dockleHelper.getOutputPath(), '--exit-level', dockleHelper.LEVEL_INFO, '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName];
     const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
     const dockleStatus = await dockleToolRunner.exec();
     return dockleStatus;
@@ -119,7 +98,7 @@ async function run(): Promise<void> {
     } else {
         throw new Error("An error occured while scanning the container image for vulnerabilities");
     }
-    
+
     let dockleStatus: number;
     if (inputHelper.isCisChecksEnabled()) {
         dockleStatus = await runDockle();

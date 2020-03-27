@@ -3,12 +3,13 @@ import * as util from 'util';
 import * as fs from 'fs';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
-import * as fileHelper from './fileHelper';
 import * as table from 'table';
 import * as semver from 'semver';
+import * as fileHelper from './fileHelper';
 import * as utils from './utils';
 
 export const DOCKLE_EXIT_CODE = 5;
+export const LEVEL_INFO = "INFO";
 const stableDockleVersion = "0.2.4";
 const dockleLatestReleaseUrl = "https://api.github.com/repos/goodwithtech/dockle/releases/latest";
 const dockleToolName = "dockle";
@@ -17,12 +18,16 @@ const KEY_CODE = "code";
 const KEY_TITLE = "title";
 const KEY_LEVEL = "level";
 const KEY_ALERTS = "alerts";
+const LEVEL_FATAL = "FATAL";
+const LEVEL_WARN = "WARN";
+const LEVEL_IGNORE = "IGNORE";
+const LEVEL_SKIP = "SKIP";
+const TITLE_COUNT = "COUNT";
+const TITLE_LEVEL = "LEVEL";
 const TITLE_VULNERABILITY_ID = "VULNERABILITY ID";
 const TITLE_TITLE = "TITLE";
 const TITLE_SEVERITY = "SEVERITY";
 const TITLE_DESCRIPTION = "DESCRIPTION";
-const LEVEL_IGNORE = "IGNORE";
-const LEVEL_INFO = "INFO";
 
 export async function getDockle(): Promise<string> {
     const latestDockleVersion = await getLatestDockleVersion();
@@ -72,18 +77,34 @@ export function getSummary(dockleStatus: number): string {
 }
 
 export function getText(dockleStatus: number): string {
-    const cisIds = getCisIds(dockleStatus);
-    return `**Best Practices Violations** -\n${cisIds.join('\n')}`;
+    let clusteredViolations = '';
+    const cisIdsByLevel = getCisIdsByLevel(dockleStatus);
+    for (let level in cisIdsByLevel) {
+        if (cisIdsByLevel[level].length > 0) {
+            clusteredViolations = `${clusteredViolations}\n- **${level}**:\n${cisIdsByLevel[level].join('\n')}`;
+        }
+    }
+    return `**Best Practices Violations** -${clusteredViolations ? clusteredViolations : '\nNone found.'}`;
 }
 
-function getCisIds(dockleStatus: number): string[] {
-    let cisIds: string[] = [];
+function getLevelsToInclude(): string[] {
+    return [LEVEL_FATAL, LEVEL_WARN, LEVEL_INFO];
+}
+
+function getCisIdsByLevel(dockleStatus: number): any {
+    const levels: string[] = getLevelsToInclude();
+    let cisIdsByLevel: any = {};
     if (dockleStatus === DOCKLE_EXIT_CODE) {
         const dockleOutputJson = getDockleOutput();
-        cisIds = dockleOutputJson['details'].map(dd => dd['code']);
+        const dockleDetails = dockleOutputJson['details'];
+        for (let level of levels) {
+            cisIdsByLevel[level] = dockleDetails
+                .filter(dd => dd['level'].toUpperCase() === level)
+                .map(dd => dd['code']);
+        }
     }
 
-    return cisIds;
+    return cisIdsByLevel;
 }
 
 function getDockleOutput(): any {
@@ -93,10 +114,19 @@ function getDockleOutput(): any {
 
 function getCisSummary(): any {
     const dockleOutputJson = getDockleOutput();
-    let cisSummary = '';
+    let cisSummary = 'Best practices test summary -';
     const dockleSummary = dockleOutputJson['summary'];
+    const includedLevels = getLevelsToInclude();
     if (dockleSummary) {
-        cisSummary = `Best practices test summary -\n"fatal": ${dockleSummary["fatal"]}\n"warn": ${dockleSummary["warn"]}\n"info": ${dockleSummary["info"]}\n"pass": ${dockleSummary["pass"]}`;
+        for (let level in dockleSummary) {
+            if (includedLevels.includes(level.toUpperCase())) {
+                const levelCount = dockleSummary[level];
+                const isBold = levelCount > 0;
+                cisSummary = isBold
+                    ? `${cisSummary}\n**${level.toUpperCase()}**: **${dockleSummary[level]}**`
+                    : `${cisSummary}\n${level.toUpperCase()}: ${dockleSummary[level]}`;
+            }
+        }
     }
 
     return cisSummary;
@@ -136,7 +166,7 @@ export function printFormattedOutput() {
     let titles = [TITLE_VULNERABILITY_ID, TITLE_TITLE, TITLE_SEVERITY, TITLE_DESCRIPTION];
     rows.push(titles);
     dockleOutputJson[KEY_DETAILS].forEach(ele => {
-        if (ele[KEY_LEVEL] != LEVEL_IGNORE && ele[KEY_LEVEL] != LEVEL_INFO) {
+        if (ele[KEY_LEVEL] != LEVEL_IGNORE) {
             let row = [];
             row.push(ele[KEY_CODE]);
             row.push(ele[KEY_TITLE]);
@@ -146,6 +176,6 @@ export function printFormattedOutput() {
         }
     });
 
-    let widths = [25, 25, 25, 60];
+    let widths = [25, 25, 15, 55];
     console.log(table.table(rows, utils.getConfigForTable(widths)));
 }

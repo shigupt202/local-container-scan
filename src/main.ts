@@ -63,6 +63,7 @@ async function runTrivy(): Promise<number> {
     const trivyOptions: ExecOptions = {
         env: trivyEnv,
         ignoreReturnCode: true,
+        silent: true,
         outStream: fs.createWriteStream(trivyHelper.getTrivyLogPath())
     };
     console.log("Scanning for vulnerabilties...");

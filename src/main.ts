@@ -68,12 +68,7 @@ async function runTrivy(): Promise<number> {
     console.log("Scanning for vulnerabilties...");
     const trivyToolRunner = new ToolRunner(trivyPath, [imageName], trivyOptions);
     const trivyStatus = await trivyToolRunner.exec();
-    const out = fs.readFileSync(trivyHelper.getTrivyLogPath(), 'utf8');
-    const errIndex = out.lastIndexOf("FATAL");
-    if (errIndex >= 0) {
-        const err = out.substring(errIndex);
-        console.log(err);
-    }
+    utils.checkForErrors(trivyHelper.getTrivyLogPath());
     return trivyStatus;
 }
 
@@ -92,13 +87,7 @@ async function runDockle(): Promise<number> {
     let dockleArgs = ['-f', 'json', '-o', dockleHelper.getOutputPath(), '--exit-level', dockleHelper.LEVEL_INFO, '--exit-code', dockleHelper.DOCKLE_EXIT_CODE.toString(), imageName];
     const dockleToolRunner = new ToolRunner(docklePath, dockleArgs, dockleOptions);
     const dockleStatus = await dockleToolRunner.exec();
-    const out = fs.readFileSync(dockleHelper.getDockleLogPath(), 'utf8');
-    const errIndex = out.lastIndexOf("FATAL");
-    if (errIndex >= 0) {
-        const err = out.substring(errIndex);
-        console.log(err);
-    }
-    console.log("out: " + out);
+    utils.checkForErrors(dockleHelper.getDockleLogPath());
     return dockleStatus;
 }
 

@@ -2,6 +2,7 @@ import * as dockleHelper from './dockleHelper';
 import * as gitHubHelper from './gitHubHelper';
 import * as inputHelper from './inputHelper';
 import * as trivyHelper from './trivyHelper';
+import { WebRequest, WebResponse, sendRequest, StatusCodes } from "./httpClient";
 
 export function getCheckRunPayloadWithScanResult(trivyStatus: number, dockleStatus: number): any {
     const headSha = gitHubHelper.getHeadSha();
@@ -18,10 +19,44 @@ export function getCheckRunPayloadWithScanResult(trivyStatus: number, dockleStat
             title: "Container scan result",
             summary: checkSummary,
             text: checkText
-        }
+        },
+        actions: [
+          {
+            label: "Update whitelist",
+            description: "Update whitelist in PR",
+            identifier: "update_whitelist"
+          }
+        ]
     }
 
     return checkRunPayload;
+}
+
+export async function createCheckRunThroughProxy(checkRunPayload: any): Promise<void> {
+  const checkRunProxyUrl = `http://20.44.40.168/app_proxy/check-run`;
+  const githubToken = inputHelper.githubToken;
+  const proxyPayload = {
+    checkRunPayload: checkRunPayload,
+    repository: process.env['GITHUB_REPOSITORY']
+  }
+
+  const webRequest = new WebRequest();
+  webRequest.method = "POST";
+  webRequest.uri = checkRunProxyUrl;
+  webRequest.body = JSON.stringify(proxyPayload);
+  webRequest.headers = {
+      Authorization: `Bearer ${githubToken}`
+  };
+
+  console.log("Creating check run. Check run url: ", checkRunProxyUrl);
+  console.log("Check run payload: ", proxyPayload);
+  
+  const response: WebResponse = await sendRequest(webRequest);
+  if (response.statusCode != StatusCodes.OK) {
+      throw Error(`Statuscode: ${response.statusCode}, StatusMessage: ${response.statusMessage}, Url: ${checkRunProxyUrl}, head_sha: ${checkRunPayload['head_sha']}`);
+  }
+
+  console.log('Check run created');
 }
 
 function getCheckConclusion(trivyStatus: number, dockleStatus: number): string {

@@ -84,9 +84,12 @@ export function getConfigForTable(widths: number[]): any {
 
 export function checkForErrors(outputPath: string) {
   const out = fs.readFileSync(outputPath, 'utf8');
-  const errIndex = out.lastIndexOf("FATAL");
-  if (errIndex >= 0) {
-    const err = out.substring(errIndex);
-    core.error(err);
-  }
+  const lines = out.split('\n');
+  lines.forEach((line) => {
+    const errIndex = line.indexOf("FATAL");
+    if (errIndex >= 0) {
+      const err = line.substring(errIndex);
+      core.error(err);
+    }
+  });
 }

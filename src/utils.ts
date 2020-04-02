@@ -10,7 +10,7 @@ export function getCheckRunPayloadWithScanResult(trivyStatus: number, dockleStat
     const checkSummary = getCheckSummary(trivyStatus, dockleStatus);
     const checkText = getCheckText(trivyStatus, dockleStatus);
 
-    const checkRunPayload = {
+    let checkRunPayload = {
         head_sha: headSha,
         name: `[container-scan] ${inputHelper.imageName}`,
         status: "completed",
@@ -19,13 +19,17 @@ export function getCheckRunPayloadWithScanResult(trivyStatus: number, dockleStat
             title: "Container scan result",
             summary: checkSummary,
             text: checkText
-        },
-        actions: [
-          {
-            label: "Update whitelist",
-            description: "Update whitelist in PR",
-            identifier: "update_whitelist"
-          }
+        }
+    }
+
+    // Add update whitelist action only if the check conclusion is failure and its PR flow
+    if (gitHubHelper.isPullRequestTrigger() && checkConclusion === 'failure') {
+        checkRunPayload['actions'] = [
+            {
+                label: "Update whitelist",
+                description: "Update whitelist in PR",
+                identifier: "update_whitelist"
+            }
         ]
     }
 
@@ -50,7 +54,7 @@ export async function createCheckRunThroughProxy(checkRunPayload: any): Promise<
 
   console.log("Creating check run. Check run url: ", checkRunProxyUrl);
   console.log("Check run payload: ", proxyPayload);
-  
+
   const response: WebResponse = await sendRequest(webRequest);
   if (response.statusCode != StatusCodes.OK) {
       throw Error(`Statuscode: ${response.statusCode}, StatusMessage: ${response.statusMessage}, Url: ${checkRunProxyUrl}, head_sha: ${checkRunPayload['head_sha']}`);

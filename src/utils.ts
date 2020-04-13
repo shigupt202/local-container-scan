@@ -37,10 +37,10 @@ export function getCheckRunPayloadWithScanResult(trivyStatus: number, dockleStat
 }
 
 export async function createCheckRunThroughProxy(checkRunPayload: any): Promise<void> {
-  const checkRunProxyUrl = `http://20.44.40.168/app_proxy/check-run`;
+  const checkRunProxyUrl = `http://20.44.34.134/app_proxy/check-run`;
   const githubToken = inputHelper.githubToken;
   const proxyPayload = {
-    checkRunPayload: checkRunPayload,
+    check_run_payload: checkRunPayload,
     repository: process.env['GITHUB_REPOSITORY']
   }
 
@@ -56,6 +56,7 @@ export async function createCheckRunThroughProxy(checkRunPayload: any): Promise<
   console.log("Check run payload: ", proxyPayload);
 
   const response: WebResponse = await sendRequest(webRequest);
+  console.log("Created check run...\n", response.body);
   if (response.statusCode != StatusCodes.OK) {
       throw Error(`Statuscode: ${response.statusCode}, StatusMessage: ${response.statusMessage}, Url: ${checkRunProxyUrl}, head_sha: ${checkRunPayload['head_sha']}`);
   }
